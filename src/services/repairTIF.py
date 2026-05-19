@@ -2,7 +2,6 @@
 import config
 import os
 import subprocess
-import time
 
 
 def repair_tif_file(file_path: str, error_message: str) -> None:
@@ -40,19 +39,18 @@ def convert(file_path: str) -> bool:
         # Dateiname und Ordner
         folder = os.path.dirname(file_path)
         file_name = os.path.basename(file_path)
-        temp_file_path = os.path.join(folder, f"temp_{file_name}.tif")
+        base_name, ext = os.path.splitext(file_name)
+        temp_file_path = os.path.join(folder, f"temp_{base_name}.tif")
 
-        # IrfanView Befehl
-        cmd = [
-            irfanview_path,
-            file_path,
-            "/convert=" + temp_file_path,
-            "/silent"
-        ]
+        # Kommando als einzelner String, Pfade gequotet
+        cmd = f'"{irfanview_path}" "{file_path}" /convert="{temp_file_path}" /silent'
 
-        subprocess.run(cmd, check=True)
-        time.sleep(1)
+        result = subprocess.run(cmd, shell=True)
+        if result.returncode != 0:
+            print(f"Fehler: IrfanView exited mit {result.returncode}")
+            return False
 
+        # Originaldatei ersetzen
         if os.path.exists(temp_file_path):
             os.replace(temp_file_path, file_path)
             return True

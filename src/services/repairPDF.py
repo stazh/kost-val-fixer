@@ -3,6 +3,7 @@ import os
 import shutil
 import time
 import win32print
+import win32ui
 
 def repair_pdf_file(file_path: str, error_message: str) -> None:
     """Repariert automatisch die PDF-Datei basierend auf bekannten Fehlern."""
@@ -62,7 +63,7 @@ def convert(file_path: str) -> bool:
 
 
 def printPDF(file_path: str) -> bool:
-    """Druckt die PDF-Datei über Adobe Acrobat, um sie zu reparieren, und ruft danach convert auf."""
+    """Druckt die PDF-Datei über Microsoft Print to PDF, um sie zu reparieren, und ruft danach convert auf."""
     try:
         temp_output_folder = config.TEMP_OUTPUT_FOLDER
         os.makedirs(temp_output_folder, exist_ok=True)
@@ -70,14 +71,38 @@ def printPDF(file_path: str) -> bool:
         file_name = os.path.basename(file_path)
         printed_file_path = os.path.join(temp_output_folder, file_name)
 
-        # os.startfile kann "print" ausführen
-        # Achtung: Hier wird der Standarddrucker genutzt
-        os.startfile(file_path, "print")
+        # Microsoft Print to PDF Drucker
+        printer_name = config.PRINTER_PDF
 
-        # Warte kurz, bis der Druckauftrag durch ist
-        time.sleep(5)
+        # Printer DC vorbereiten
+        hprinter = win32print.OpenPrinter(printer_name)
+        printer_info = win32print.GetPrinter(hprinter, 2)
+        devmode = printer_info["pDevMode"]
 
-        shutil.copy(file_path, printed_file_path)
+        # Ausgabe-Dateipfad setzen
+        devmode.PrintFileName = printed_file_path
+        devmode.Fields |= win32print.DM_PRINTFILE
+        win32print.SetPrinter(hprinter, 2, printer_info, 0)
+        win32print.ClosePrinter(hprinter)
+
+        # PDF drucken
+        pdf_dc = win32ui.CreateDC()
+        pdf_dc.CreatePrinterDC(printer_name)
+        pdf_dc.StartDoc({'DocName': file_name})
+        pdf_dc.StartPage()
+        pdf_dc.EndPage()
+        pdf_dc.EndDoc()
+        pdf_dc.DeleteDC()
+        # Kurze Pause, damit die Datei geschrieben wird
+        for _ in range(5):
+            if os.path.exists(printed_file_path):
+                break
+            time.sleep(1)
+        else:
+            print(f"Fehler: Die gedruckte Datei wurde nicht erstellt: {printed_file_path}")
+            return False
+        print("7")
+        shutil.move(printed_file_path, file_path)
         convert(file_path)
 
         return True

@@ -17,7 +17,8 @@ SUPPORTED_PDF_ERRORS = [
     {"MESSAGE": "The processing instruction target matching \"[xX][mM][lL]\" is not allowed.", "SOLUTION": "convert"},
     {"MESSAGE": "Eine Datei, die mit Level A konform ist, muss den Wert von pdfaid:conformance als A angeben. Eine Datei, die mit Level B konform ist, muss den Wert von pdfaid:conformance als B angeben. Eine mit Level U konforme Datei muss den Wert von pdfaid:conformance als U angeben.", "SOLUTION": "convert" },
     {"MESSAGE": "Der Wert von pdfaid:part muss die Teilenummer von ISO 19005 sein, der die Datei entspricht.", "SOLUTION": "convert" },
-    {"MESSAGE": "Die PDF Datei wird nicht akzeptiert.", "SOLUTION": "print"}
+    {"MESSAGE": "Die PDF Datei wird nicht akzeptiert.", "SOLUTION": "print"},
+    {"MESSAGE": "Informationen sind hier ersichtlich: https://kost-ceco.ch/cms/pdf-nicht-durchsuchbar.html", "SOLUTION": "print"}
 ]
 SUPPORTED_TIF_ERRORS = [
     {"MESSAGE": "CompressionScheme: ISO JPEG ist nicht zulaessig.", "SOLUTION": "convert"}
