@@ -28,7 +28,7 @@ os.chdir(PROJECT_DIR)
 
 # Kommando-Mapping für verschiedene Aktionen
 COMMANDS = {
-    'fix-formats': ('xml_tool\\xmlReader', 'fix_formats', 'Behebt automatisch die Formatierungsfehler in den XML-Dateien.'),
+    'fix-formats': ('xml\\reader', 'fix_formats', 'Behebt automatisch die Formatierungsfehler in den XML-Dateien.'),
 }
 
 def execute_command(command: str) -> None:

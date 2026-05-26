@@ -5,10 +5,10 @@ import time
 import win32print
 import win32ui
 
-from services.logStorage import add_log
-from services.pdf_fixer.convert import convert
+from services.xml.logging import add_log
+from services.repair.pdf.convert import convert
 
-def printPDF(file_path: str) -> bool:
+def createPDF(file_path: str) -> bool:
     """Druckt die PDF-Datei über Microsoft Print to PDF und ruft danach convert auf."""
     try:
         temp_output_folder = config.TEMP_OUTPUT_FOLDER

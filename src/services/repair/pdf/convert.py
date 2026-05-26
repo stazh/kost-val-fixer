@@ -3,7 +3,7 @@ import os
 import shutil
 import time
 
-from services.logStorage import add_log
+from services.xml.logging import add_log
 
 
 def convert(file_path: str) -> bool:

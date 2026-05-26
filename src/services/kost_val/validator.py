@@ -1,7 +1,7 @@
 import subprocess
 import config
 
-from services.logStorage import add_log
+from services.xml.logging import add_log
 
 def validate_files(invalid_validations: list):
     """
