@@ -33,7 +33,11 @@ SUPPORTED_ERRORS = {
     "JPG": {"A) Erkennung und Akzeptanz": "convert", "3B) Zusaetzliche Formate": "convert"},
     "PNG": {"A) Erkennung und Akzeptanz": "convert"},
     "MPG": {"A) Erkennung und Akzeptanz": "convert"},
-    "XLS": {"A) Erkennung und Akzeptanz": "convert"}
+    "XLS": {"A) Erkennung und Akzeptanz": "convert"},
+    "DOC": {"A) Erkennung und Akzeptanz": "convert"},
+    "DOCX": {"A) Erkennung und Akzeptanz": "convert"},
+    "MSG": {"A) Erkennung und Akzeptanz": "convert"},
+    "PPT": {"A) Erkennung und Akzeptanz": "convert"}
 }
 
 FILE_TYPE_MAPPING = {
@@ -47,6 +51,10 @@ FILE_TYPE_MAPPING = {
     ".jpg": ("JPG", picture),
     ".png": ("PNG", picture),
     ".mpg": ("MPG", media),
+    ".doc": ("DOC", pdf),
+    ".docx": ("DOCX", pdf),
+    ".msg": ("MSG", pdf),
+    ".ppt": ("PPT", pdf)
 }
 
 # ------------------------
