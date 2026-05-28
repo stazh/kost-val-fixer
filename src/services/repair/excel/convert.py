@@ -1,69 +1,51 @@
 import os
-from services.xml.logging import add_log
-
+from win32com.client import Dispatch
+from services.xml.logging import info, warning, error, success
 
 def convert(file_path: str) -> bool:
-    """
-    Konvertiert XLS -> XLSX mit Microsoft Excel.
-    - Originaldatei wird gelöscht
-    - Basisname bleibt gleich
-    """
-
     excel = None
     workbook = None
+
     try:
-        if not os.path.exists(file_path):
-            add_log(f"Datei nicht gefunden: {file_path}")
+        if not os.path.isfile(file_path):
+            error(f"Datei nicht gefunden: {file_path}")
             return False
 
         folder = os.path.dirname(file_path)
-
-        file_name = os.path.basename(file_path)
-        base_name, ext = os.path.splitext(file_name)
-
-        ext = ext.lower()
-
-        # nur XLS konvertieren
-        if ext != ".xls":
-            add_log(f"Keine XLS-Datei: {file_path}")
-            return False
-
+        base_name = os.path.splitext(os.path.basename(file_path))[0]
         output_file = os.path.join(folder, f"{base_name}.xlsx")
 
-        add_log(f"Starte XLS -> XLSX Konvertierung: {file_path}")
+        info(f"Starte Konvertierung: {file_path}")
 
-        # Excel starten
-        from win32com.client import Dispatch
         excel = Dispatch("Excel.Application")
         excel.Visible = False
         excel.DisplayAlerts = False
+        excel.ScreenUpdating = False
 
-        # Workbook öffnen
-        workbook = excel.Workbooks.Open(os.path.abspath(file_path))
+        workbook = excel.Workbooks.Open(os.path.abspath(file_path), UpdateLinks=0, ReadOnly=False)
 
-        # FileFormat=51 => XLSX
-        workbook.SaveAs(os.path.abspath(output_file), FileFormat=51)
+        # Berechne alle Formeln
+        info("Berechne Formeln...")
+        workbook.Application.CalculateFull()
+
+        # Exportiere als XLSX
+        workbook.SaveAs(os.path.abspath(output_file), FileFormat=51, Local=True)
+        info(f"XLSX erstellt: {output_file}")
 
         workbook.Close(False)
-        workbook = None
+        success(f"Konvertierung erfolgreich: {output_file}")
 
-        excel.Quit()
-        excel = None
-
-        # prüfen ob Output existiert
-        if not os.path.exists(output_file):
-            add_log(f"XLSX-Datei wurde nicht erstellt: {output_file}")
-            return False
-
-        # Original löschen
-        os.remove(file_path)
-
-        add_log(f"XLS erfolgreich konvertiert: {output_file}")
+        # Optional: Original löschen
+        try:
+            os.remove(file_path)
+            info(f"Original gelöscht: {file_path}")
+        except Exception as e:
+            warning(f"Original konnte nicht gelöscht werden: {e}")
 
         return True
 
     except Exception as e:
-        add_log(f"Fehler beim Konvertieren der Datei {file_path}: {e}")
+        error(f"Fehler bei der Konvertierung: {e}")
         return False
 
     finally:
@@ -72,7 +54,6 @@ def convert(file_path: str) -> bool:
                 workbook.Close(False)
         except:
             pass
-
         try:
             if excel:
                 excel.Quit()

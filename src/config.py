@@ -61,3 +61,11 @@ VALIDATE_FORMAT = "..\\Liberica_JRE\\bin\\java.exe -Xms2g -Xmx6g -XX:+UseG1GC -X
 # 4. Messages
 # ------------------------
 PDF_FONT_MESSAGE = "Es wurde keine Fontvalidierung durchgefuehrt, da die Module A bis I nicht bestanden haben."
+STATS = {
+    "converted_success": 0,
+    "converted_failed": 0,
+    "validated_valid": 0,
+    "validated_invalid": 0,
+    "unsupported": 0,
+    "errors": 0
+}

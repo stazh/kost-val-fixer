@@ -2,10 +2,20 @@ from tkinter import filedialog
 import xml.etree.ElementTree as ET
 
 import config
+
 from app import root
 
-from services.xml.logging import add_log, save_logs
 from services.kost_val.validator import validate_files
+
+from services.xml.logging import (
+    info,
+    warning,
+    error,
+    success,
+    save_logs,
+    unsupported_file,
+    conversion_result
+)
 
 def execute_convert(fixer, file_path: str) -> bool:
     return fixer.convert.convert(file_path)
@@ -22,10 +32,6 @@ ACTION_MAPPING = {
 
 
 def get_file_handler(file_path: str):
-    """
-    Ermittelt Dateityp und zuständigen Fixer
-    anhand der Dateiendung.
-    """
     file_path_lower = file_path.lower()
 
     for extension, (file_type, fixer) in config.FILE_TYPE_MAPPING.items():
@@ -36,10 +42,6 @@ def get_file_handler(file_path: str):
 
 
 def fix_formats() -> None:
-    """
-    Behebt automatisch die Formatierungsfehler
-    in der XML-Datei und trägt alle Module ein.
-    """
     try:
         file_path = filedialog.askopenfilename(
             title="Wählen Sie eine XML-Datei aus",
@@ -48,120 +50,122 @@ def fix_formats() -> None:
         )
 
         if not file_path:
-            add_log("Keine Datei ausgewählt: Vorgang abgebrochen.")
+            warning("Keine Datei ausgewählt.")
             return
 
-        add_log(f"Datei ausgewählt: {file_path}")
+        info(f"XML-Datei ausgewählt: {file_path}")
 
         tree = ET.parse(file_path)
         root_element = tree.getroot()
 
-        invalid_validations = []
+        invalid_validations = extract_invalid_validations(root_element)
 
-        for format_section in root_element.findall(".//Format"):
-            for validation in format_section.findall("Validation"):
-                invalid_tag = validation.find("Invalid")
-                not_accepted_tag = validation.find("Notaccepted")
-
-                is_invalid = (
-                    invalid_tag is not None
-                    and str(invalid_tag.text).lower() == "invalid"
-                )
-
-                is_not_accepted = (
-                    not_accepted_tag is not None
-                    and str(not_accepted_tag.text).lower() == "not accepted"
-                )
-
-                if not (is_invalid or is_not_accepted):
-                    continue
-
-                val_file = validation.findtext("ValFile", default="").replace("->", "").strip()
-
-                messages = []
-                modules = set()
-
-                for error in validation.findall("Error"):
-                    modul_tag = error.find("Modul")
-
-                    if modul_tag is not None and modul_tag.text:
-                        modules.add(modul_tag.text.strip())
-
-                    for msg in error.findall("Message"):
-                        if msg.text:
-                            messages.append(msg.text.strip())
-
-                combined_messages = " ".join(messages)
-
-                invalid_validations.append({
-                    "filePath": val_file,
-                    "modul": list(modules),
-                    "message": combined_messages
-                })
-
-        add_log(f"Nicht bestandene Validierungen gefunden: "f"{len(invalid_validations)} Dateien.")
+        info(f"{len(invalid_validations)} ungültige Validierungen gefunden.", console=True)
 
         if invalid_validations:
-            add_log("Starte Sortierung und mögliche Reparaturen der Dateien:")
-            sort_validations_by_file(invalid_validations)
-            add_log("Starte Validierung der Dateien mit KOST-Val:")
+            process_validations(invalid_validations)
+
+            info("Starte KOST-Val Revalidierung...")
             validate_files(invalid_validations)
 
         else:
-            add_log("Keine ungültigen Validierungen gefunden.")
-
-        save_logs()
+            success("Keine ungültigen Validierungen gefunden.", console=True)
 
     except Exception as e:
-        add_log(f"Fehler beim Verarbeiten der XML-Datei: {e}")
+        error(f"Fehler beim Verarbeiten der XML-Datei: {e}")
+
+    finally:
         save_logs()
 
 
-def sort_validations_by_file(invalid_validations: list) -> None:
-    """
-    Sortiert die ungültigen Validierungen
-    nach Dateityp und Modul und führt
-    definierte Aktionen aus.
-    """
+def extract_invalid_validations(root_element) -> list:
+    invalid_validations = []
 
-    try:
-        for error in invalid_validations:
-            file_path = str(error["filePath"])
-            error_message = str(error["message"])
-            modules = error.get("modul", [])
+    for format_section in root_element.findall(".//Format"):
 
-            add_log(f"Sortiere Datei: {file_path} | "f"Module: {modules}")
+        for validation in format_section.findall("Validation"):
 
-            file_type, fixer = get_file_handler(file_path)
+            invalid_tag = validation.findtext("Invalid", default="")
+            not_accepted_tag = validation.findtext("Notaccepted", default="")
 
-            if not file_type:
-                add_log(f"Korrektur erforderlich: "f"Nicht unterstützter Dateityp: "f"{file_path}")
+            is_invalid = invalid_tag.lower() == "invalid"
+            is_not_accepted = not_accepted_tag.lower() == "not accepted"
+
+            if not (is_invalid or is_not_accepted):
                 continue
-            
-            solved = False
 
-            for modul in modules:
-                action = (config.SUPPORTED_ERRORS.get(file_type, {}).get(modul))
+            file_path = (
+                validation.findtext("ValFile", default="")
+                .replace("->", "")
+                .strip()
+            )
 
-                if not action:
-                    add_log(f"{file_type} Datei {file_path} "f"Modul '{modul}' "f"hat keine definierte Aktion.")
-                    continue
+            modules = set()
+            messages = []
 
-                # PDF Font Sonderfall
-                if (action == config.PRINT and config.PDF_FONT_MESSAGE in error_message):
-                    add_log(f"{file_type} Datei {file_path} "f"übersprungen wegen "f"PDF_FONT_MESSAGE.")
-                    continue
+            for error_tag in validation.findall("Error"):
+                modul = error_tag.findtext("Modul")
+                if modul:
+                    modules.add(modul.strip())
 
-                # Action ausführen
-                try:
-                    solved = ACTION_MAPPING[action](fixer, file_path)
-                    add_log(f"{file_type} Datei {file_path} "f"Modul '{modul}' "f"mit '{action}' verarbeitet: "f"{'erfolgreich' if solved else 'nicht erfolgreich'}")
+                for message in error_tag.findall("Message"):
+                    if message.text:
+                        messages.append(message.text.strip())
 
-                    if solved:
-                        break
+            invalid_validations.append({
+                "filePath": file_path,
+                "modul": list(modules),
+                "message": " ".join(messages)
+            })
 
-                except Exception as action_error:
-                    add_log(f"Fehler bei Aktion '{action}' "f"für Datei {file_path}: "f"{action_error}")
+    return invalid_validations
 
-    except Exception as e:
-        add_log(f"Fehler beim Sortieren "f"der Validierungen: {e}")
+
+def process_validations(invalid_validations: list) -> None:
+    for validation in invalid_validations:
+        file_path = str(validation["filePath"])
+        modules = validation.get("modul", [])
+        error_message = str(validation["message"])
+
+        info(f"Verarbeite Datei: {file_path} | Module: {modules}")
+
+        file_type, fixer = get_file_handler(file_path)
+
+        if not file_type:
+            unsupported_file(file_path)
+            continue
+
+        solved = False
+
+        for modul in modules:
+            action = (
+                config.SUPPORTED_ERRORS
+                .get(file_type, {})
+                .get(modul)
+            )
+
+            if not action:
+                warning(f"{file_type}: Keine Aktion definiert für Modul '{modul}'")
+                continue
+
+            # PDF Font Sonderfall
+            if (
+                action == config.PRINT
+                and config.PDF_FONT_MESSAGE in error_message
+            ):
+                warning(f"{file_path} übersprungen (PDF_FONT_MESSAGE)")
+                continue
+
+            try:
+                solved = ACTION_MAPPING[action](
+                    fixer,
+                    file_path
+                )
+
+                conversion_result(file_path, solved)
+
+                if solved:
+                    break
+
+            except Exception as action_error:
+                error(f"Fehler bei Aktion '{action}' für {file_path}: {action_error}")
