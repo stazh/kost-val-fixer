@@ -2,7 +2,7 @@ import os
 from tkinter import filedialog, Tk
 
 import config
-from services.xml.logging import info, warning, error, success
+from services.xml.logging import info, warning, error, success, save_logs
 
 
 def replace_umlauts(name: str) -> str:
@@ -57,10 +57,12 @@ def rename_recursive(folder: str) -> bool:
                     info(f"Ordner umbenannt: {old_path} -> {new_path}")
 
         success("Umlaut-Rename abgeschlossen.")
+        save_logs(False)
         return True
 
     except Exception as e:
         error(f"Fehler beim Umlaut-Rename: {e}")
+        save_logs(False)
         return False
 
 

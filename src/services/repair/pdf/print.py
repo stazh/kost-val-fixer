@@ -1,75 +1,57 @@
 import os
-import shutil
 import time
+import shutil
+import win32api
+import pyautogui
 
-import win32print
-import win32ui
+from services.xml.logging import info, warning, error, success
+from services.repair.pdf.convert import convert
 
 import config
 
-from services.repair.pdf.convert import convert
-
-from services.xml.logging import (
-    info,
-    warning,
-    error,
-    success
-)
-
-
 def createPDF(file_path: str) -> bool:
+    """
+    Druckt eine bestehende PDF neu über Microsoft Print to PDF,
+    automatisiert den Speichern-Dialog mit pyautogui und ersetzt die Originaldatei.
+    """
     try:
-        os.makedirs(
-            config.TEMP_OUTPUT_FOLDER,
-            exist_ok=True
-        )
-
         file_name = os.path.basename(file_path)
+        printed_file_path = os.path.join(config.TEMP_OUTPUT_FOLDER, file_name)
 
-        printed_file_path = os.path.join(
-            config.TEMP_OUTPUT_FOLDER,
-            file_name
-        )
+        # Temporären Ordner sicherstellen
+        os.makedirs(config.TEMP_OUTPUT_FOLDER, exist_ok=True)
 
         printer_name = config.PRINTER_PDF
 
-        hprinter = win32print.OpenPrinter(printer_name)
+        info(f"Starte Druck von: {file_path} über {printer_name}")
 
-        printer_info = win32print.GetPrinter(hprinter, 2)
+        # Druck starten (öffnet den Speichern-unter-Dialog)
+        win32api.ShellExecute(
+            0,
+            "printto",
+            file_path,
+            f'"{printer_name}"',
+            ".",
+            0
+        )
 
-        devmode = printer_info["pDevMode"]
+        # Kurze Wartezeit, bis der Dialog erscheint
+        time.sleep(2)
 
-        devmode.PrintFileName = printed_file_path
-        devmode.Fields |= win32print.DM_PRINTFILE
+        # Pfad für die neue PDF automatisch eintippen
+        pyautogui.write(printed_file_path)
+        pyautogui.press("enter")
 
-        win32print.SetPrinter(hprinter, 2, printer_info, 0)
-
-        win32print.ClosePrinter(hprinter)
-
-        pdf_dc = win32ui.CreateDC()
-
-        pdf_dc.CreatePrinterDC(printer_name)
-
-        pdf_dc.StartDoc({'DocName': file_name})
-
-        pdf_dc.StartPage()
-        pdf_dc.EndPage()
-        pdf_dc.EndDoc()
-
-        pdf_dc.DeleteDC()
-
-        info(f"PDF gedruckt: {file_name}")
-
-        for _ in range(5):
+        # Warten, bis die PDF erstellt wurde
+        for _ in range(20):
             if os.path.exists(printed_file_path):
                 break
-
             time.sleep(1)
-
         else:
             warning(f"PDF-Ausgabe nicht erstellt: {printed_file_path}")
             return False
 
+        # Originaldatei ersetzen
         shutil.move(printed_file_path, file_path)
         success(f"PDF zurückverschoben: {file_name}")
         return convert(file_path)

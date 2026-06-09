@@ -37,7 +37,8 @@ SUPPORTED_ERRORS = {
     "DOC": {"A) Erkennung und Akzeptanz": "convert"},
     "DOCX": {"A) Erkennung und Akzeptanz": "convert"},
     "MSG": {"A) Erkennung und Akzeptanz": "convert"},
-    "PPT": {"A) Erkennung und Akzeptanz": "convert"}
+    "PPT": {"A) Erkennung und Akzeptanz": "convert"},
+    "MOV": {"A) Erkennung und Akzeptanz": "convert"}
 }
 
 FILE_TYPE_MAPPING = {
@@ -54,7 +55,18 @@ FILE_TYPE_MAPPING = {
     ".doc": ("DOC", pdf),
     ".docx": ("DOCX", pdf),
     ".msg": ("MSG", pdf),
-    ".ppt": ("PPT", pdf)
+    ".ppt": ("PPT", pdf),
+    ".mov": ("MOV", media)
+}
+
+UMLAUT_MAP = {
+    'ä': 'ae',
+    'ö': 'oe',
+    'ü': 'ue',
+    'Ä': 'Ae',
+    'Ö': 'Oe',
+    'Ü': 'Ue',
+    'ß': 'ss'
 }
 
 # ------------------------

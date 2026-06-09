@@ -29,6 +29,7 @@ os.chdir(PROJECT_DIR)
 # Kommando-Mapping für verschiedene Aktionen
 COMMANDS = {
     'fix-formats': ('xml\\reader', 'fix_formats', 'Behebt automatisch die Formatierungsfehler in den XML-Dateien.'),
+    'normalize': ('normalizer\\normalizeUmlauts', 'select_and_run_rename', 'Normalisiert Dateinamen und Ordnerstruktur (Umlaute werden ersetzt).'),
 }
 
 def execute_command(command: str) -> None:

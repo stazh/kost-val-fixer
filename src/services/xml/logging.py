@@ -82,26 +82,28 @@ def unsupported_file(file_name: str):
     )
 
 
-def save_logs():
+def save_logs(addSummary: bool = True):
     timestamp = datetime.datetime.now().strftime("%Y-%m-%d_%H-%M-%S")
 
     os.makedirs("logs", exist_ok=True)
 
     filename = f"logs/log_{timestamp}.txt"
+    summary = []
 
-    summary = [
-        "",
-        "=" * 60,
-        "ZUSAMMENFASSUNG",
-        "=" * 60,
-        f"Konvertiert erfolgreich : {config.STATS['converted_success']}",
-        f"Konvertierung fehlgeschlagen : {config.STATS['converted_failed']}",
-        f"Valide Dateien : {config.STATS['validated_valid']}",
-        f"Invalide Dateien : {config.STATS['validated_invalid']}",
-        f"Nicht unterstützt : {config.STATS['unsupported']}",
-        f"Fehler : {config.STATS['errors']}",
-        "=" * 60,
-    ]
+    if addSummary:
+        summary = [
+            "",
+            "=" * 60,
+            "ZUSAMMENFASSUNG",
+            "=" * 60,
+            f"Konvertiert erfolgreich : {config.STATS['converted_success']}",
+            f"Konvertierung fehlgeschlagen : {config.STATS['converted_failed']}",
+            f"Valide Dateien : {config.STATS['validated_valid']}",
+            f"Invalide Dateien : {config.STATS['validated_invalid']}",
+            f"Nicht unterstützt : {config.STATS['unsupported']}",
+            f"Fehler : {config.STATS['errors']}",
+            "=" * 60,
+        ]
 
     with open(filename, "w", encoding="utf-8") as f:
         for entry in LOGS:
@@ -110,11 +112,11 @@ def save_logs():
         for line in summary:
             f.write(line + "\n")
 
-    print("\n===== ZUSAMMENFASSUNG =====")
-    print(f"{config.STATS['converted_success']} Dateien konvertiert")
-    print(f"{config.STATS['validated_invalid']} Dateien sind invalide")
-    print(f"{config.STATS['errors']} Dateien haben Fehler")
-    print(f"{config.STATS['unsupported']} Dateien nicht unterstützt")
-    print("===========================\n")
-
-    print(f"Logs gespeichert in: {filename}")
+    if addSummary:
+        print("\n===== ZUSAMMENFASSUNG =====")
+        print(f"{config.STATS['converted_success']} Dateien konvertiert")
+        print(f"{config.STATS['validated_invalid']} Dateien sind invalide")
+        print(f"{config.STATS['errors']} Dateien haben Fehler")
+        print(f"{config.STATS['unsupported']} Dateien nicht unterstützt")
+        print("===========================\n")
+        print(f"Logs gespeichert in: {filename}")
