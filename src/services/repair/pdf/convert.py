@@ -38,6 +38,9 @@ def convert(file_path: str) -> bool:
                 if os.path.exists(output_path):
                     os.remove(output_path)
                     info(f"Temporäre Ausgabedatei gelöscht: {output_path}")
+                if os.path.exists(file_path):
+                    os.remove(file_path)
+                    info(f"Originale Datei gelöscht: {file_path}")
 
                 return True
             time.sleep(1)
