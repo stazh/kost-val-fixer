@@ -1,80 +1,88 @@
 import os
-from tkinter import filedialog, Tk
+import shutil
+import subprocess
 
 import config
-from services.xml.logging import info, warning, error, success
+
+from services.xml.logging import (
+    info,
+    warning,
+    error,
+    success
+)
 
 
-def replace_umlauts(name: str) -> str:
-    """Ersetzt Umlaute im Namen anhand config.UMLAUT_MAP."""
-    for umlaut, replacement in config.UMLAUT_MAP.items():
-        name = name.replace(umlaut, replacement)
-    return name
-
-
-def rename_recursive(folder: str) -> bool:
+def convert(file_path: str) -> bool:
     """
-    Benennt rekursiv alle Dateien und Ordner um:
-    ä -> ae, ö -> oe, ü -> ue usw.
+    Konvertiert Bilder mit IrfanView.
+
+    Unterstützt:
+    - GIF -> PNG
+    - andere Formate behalten ihre Endung
+
+    Die Originaldatei wird ersetzt.
     """
-
-    if not folder or not os.path.isdir(folder):
-        warning("Kein gültiger Ordner angegeben.")
-        return False
-
-    info(f"Starte Umlaut-Rename für: {folder}")
 
     try:
-        # bottom-up ist wichtig, sonst kollidieren Ordnernamen beim Rename
-        for current_root, dirs, files in os.walk(folder, topdown=False):
+        irfanview_path = config.IRFANVIEW_PATH
 
-            # Dateien zuerst
-            for file_name in files:
-                old_path = os.path.join(current_root, file_name)
-                new_name = replace_umlauts(file_name)
-                new_path = os.path.join(current_root, new_name)
+        if not os.path.isfile(irfanview_path):
 
-                if old_path != new_path:
-                    if os.path.exists(new_path):
-                        warning(f"Ziel existiert bereits, überspringe: {new_path}")
-                        continue
+            error(f"IrfanView nicht gefunden: {irfanview_path}")
+            return False
 
-                    os.rename(old_path, new_path)
-                    info(f"Datei umbenannt: {old_path} -> {new_path}")
+        folder = os.path.dirname(file_path)
+        file_name = os.path.basename(file_path)
+        base_name, extension = os.path.splitext(file_name)
+        extension = extension.lower()
 
-            # danach Ordner
-            for dir_name in dirs:
-                old_path = os.path.join(current_root, dir_name)
-                new_name = replace_umlauts(dir_name)
-                new_path = os.path.join(current_root, new_name)
+        # GIF -> PNG
+        output_extension = ".png" if extension == ".gif" else extension
 
-                if old_path != new_path:
-                    if os.path.exists(new_path):
-                        warning(f"Ziel existiert bereits, überspringe: {new_path}")
-                        continue
+        temp_output_path = os.path.join(r"C:\Temp", f"temp_{base_name}{output_extension}")
+        final_output_path = os.path.join(folder, f"{base_name}{output_extension}")
 
-                    os.rename(old_path, new_path)
-                    info(f"Ordner umbenannt: {old_path} -> {new_path}")
+        info(f"Starte Bild-Konvertierung: {file_name}")
 
-        success("Umlaut-Rename abgeschlossen.")
+        irfanview_dir = os.path.dirname(irfanview_path)
+
+        # Kommando vorbereiten
+        cmd = [
+            irfanview_path,
+            file_path,
+            f'/convert={temp_output_path}',
+            '/silent'
+        ]
+
+        # Subprocess ausführen
+        result = subprocess.run(
+            cmd,
+            cwd=irfanview_dir,
+            capture_output=True,
+            text=True
+        )
+
+        if result.returncode != 0:
+            error(
+                f"IrfanView Fehler bei {file_name} | "
+                f"Code: {result.returncode} | STDERR: {result.stderr.strip()}"
+            )
+            return False
+
+        if not os.path.exists(temp_output_path):
+            warning(f"Konvertierte Datei fehlt: {temp_output_path}")
+            return False
+
+        # Original löschen
+        if os.path.exists(file_path):
+            os.remove(file_path)
+
+        # Temp-Datei verschieben
+        shutil.move(temp_output_path, final_output_path)
+
+        success(f"Bild erfolgreich konvertiert: {os.path.basename(final_output_path)}")
         return True
 
     except Exception as e:
-        error(f"Fehler beim Umlaut-Rename: {e}")
+        error(f"Fehler bei Bild-Konvertierung von {file_path}: {e}")
         return False
-
-
-def select_and_run_rename() -> bool:
-    """
-    Öffnet Dialog und startet Rename.
-    """
-    root = Tk()
-    root.withdraw()
-
-    folder = filedialog.askdirectory(title="Ordner auswählen")
-
-    if not folder:
-        warning("Kein Ordner ausgewählt.")
-        return False
-
-    return rename_recursive(folder)

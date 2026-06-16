@@ -30,6 +30,9 @@ os.chdir(PROJECT_DIR)
 COMMANDS = {
     'fix-formats': ('xml\\reader', 'fix_formats', 'Behebt automatisch die Formatierungsfehler in den XML-Dateien.'),
     'normalize': ('normalizer\\normalizeUmlauts', 'select_and_run_rename', 'Normalisiert Dateinamen und Ordnerstruktur (Umlaute werden ersetzt).'),
+    'create-report': ('reports\\createReport', 'create_report', 'Erstellt einen Bericht über für das Validierungsprotokoll.'),
+    'rclone': ('clone\\rclone', 'start_transfer', 'Kopiert oder verschiebt Dateien/Ordner mit Rclone.'),
+    'validate': ('kost_val\\validator', 'validate_files_from_folder', 'Validiert Dateien mit dem KOST-Validator.')
 }
 
 def execute_command(command: str) -> None:
@@ -68,5 +71,4 @@ def main() -> None:
 
 # Startet das Skript, wenn es direkt ausgeführt wird
 if __name__ == '__main__':
-    ret_code = main()
-    sys.exit(ret_code)
+    main()

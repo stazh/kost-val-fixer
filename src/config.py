@@ -14,6 +14,10 @@ TEMP_OUTPUT_FOLDER = r"Dokumente\TempPDFRepairOutput"
 IRFANVIEW_PATH = r"C:\Program Files\IrfanView\i_view64.exe"
 VALIDATOR_PATH = r"C:\Program Files\KOST-CECO\KOST-Tools\tools\KOST-Val"
 VLC_MEDIA_PLAYER_PATH = r"C:\Program Files\VideoLAN\VLC\vlc.exe"
+RCLONE_PATH = r"C:\Program Files (x86)\RClone\rclone.exe"
+LOG_FOLDER_PATH = r".kost-val_2x\logs"
+LOG_FILE_EXTENSION = ".kost-val.log.xml"
+DATA_FOLDER_PATH = r"I:\08_Zwischenablage_Mitarbeiter\Changten_Tseten_cen\Projekte\Kost-Val-Fixer\background-processes"
 
 # ------------------------
 # 2. Supported Errors
@@ -38,7 +42,8 @@ SUPPORTED_ERRORS = {
     "DOCX": {"A) Erkennung und Akzeptanz": "convert"},
     "MSG": {"A) Erkennung und Akzeptanz": "convert"},
     "PPT": {"A) Erkennung und Akzeptanz": "convert"},
-    "MOV": {"A) Erkennung und Akzeptanz": "convert"}
+    "MOV": {"A) Erkennung und Akzeptanz": "convert"},
+    "WMV": {"A) Erkennung und Akzeptanz": "convert"}
 }
 
 FILE_TYPE_MAPPING = {
@@ -56,7 +61,8 @@ FILE_TYPE_MAPPING = {
     ".docx": ("DOCX", pdf),
     ".msg": ("MSG", pdf),
     ".ppt": ("PPT", pdf),
-    ".mov": ("MOV", media)
+    ".mov": ("MOV", media),
+    ".wmv": ("WMV", media)
 }
 
 UMLAUT_MAP = {
@@ -75,7 +81,7 @@ UMLAUT_MAP = {
 CONVERT = "convert"
 PRINT = "print"
 PRINTER_PDF = "Microsoft Print to PDF"
-VALIDATE_FORMAT = "..\\Liberica_JRE\\bin\\java.exe -Xms2g -Xmx6g -XX:+UseG1GC -XX:MaxGCPauseMillis=200 -jar cmd_KOST-Val.jar --sip \"Pfad\" --de --xml"
+VALIDATE_FORMAT = "..\\Liberica_JRE\\bin\\java.exe -Xms2g -Xmx6g -XX:+UseG1GC -XX:MaxGCPauseMillis=200 -jar cmd_KOST-Val.jar --Switch \"Pfad\" --de --xml"
 
 # ------------------------
 # 4. Messages

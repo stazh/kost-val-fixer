@@ -87,7 +87,7 @@ def save_logs(addSummary: bool = True):
 
     os.makedirs("logs", exist_ok=True)
 
-    filename = f"logs/log_{timestamp}.txt"
+    filename = f"../logs/log_{timestamp}.txt"
     summary = []
 
     if addSummary:

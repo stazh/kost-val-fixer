@@ -6,12 +6,16 @@ import config
 from services.xml.logging import info, warning, error, success
 
 def convert(file_path: str) -> bool:
+    """
+    Konvertiert eine Datei in PDF.
+    Löscht die Originaldatei nur, wenn sie keine PDF ist.
+    """
     try:
         input_folder = config.INPUT_FOLDER_PATH
         output_folder = config.OUTPUT_FOLDER_PATH
 
         file_name = os.path.basename(file_path)
-        base_name = os.path.splitext(file_name)[0]
+        base_name, ext = os.path.splitext(file_name)
 
         input_path = os.path.join(input_folder, file_name)
         output_path = os.path.join(output_folder, f"{base_name}.pdf")
@@ -20,6 +24,7 @@ def convert(file_path: str) -> bool:
         os.makedirs(input_folder, exist_ok=True)
         os.makedirs(output_folder, exist_ok=True)
 
+        # Datei in Input-Ordner kopieren
         shutil.copy(file_path, input_path)
         info(f"Datei zur Konvertierung vorbereitet: {input_path}")
 
@@ -38,11 +43,16 @@ def convert(file_path: str) -> bool:
                 if os.path.exists(output_path):
                     os.remove(output_path)
                     info(f"Temporäre Ausgabedatei gelöscht: {output_path}")
-                if os.path.exists(file_path):
+
+                # Original nur löschen, wenn es keine PDF ist
+                if ext.lower() != ".pdf" and os.path.exists(file_path):
                     os.remove(file_path)
-                    info(f"Originale Datei gelöscht: {file_path}")
+                    info(f"Originaldatei gelöscht (kein PDF): {file_path}")
+                else:
+                    info(f"Originaldatei behalten (PDF): {file_path}")
 
                 return True
+
             time.sleep(1)
 
         warning(f"Keine konvertierte Datei gefunden: {output_path}")

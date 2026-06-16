@@ -169,3 +169,52 @@ def process_validations(invalid_validations: list) -> None:
 
             except Exception as action_error:
                 error(f"Fehler bei Aktion '{action}' für {file_path}: {action_error}")
+
+
+def read_log_file_content(log_file_path: str) -> list:
+    try:
+        tree = ET.parse(log_file_path)
+        root_element = tree.getroot()
+
+        results = []
+
+        for format_section in root_element.findall(".//Format"):
+
+            for validation in format_section.findall("Validation"):
+
+                path = (
+                    validation.findtext("ValFile", default="")
+                    .replace("->", "")
+                    .strip()
+                )
+
+                if validation.find("Valid") is not None:
+                    status = "Valid"
+
+                elif validation.find("Invalid") is not None:
+                    status = "Invalid"
+
+                elif validation.find("Notaccepted") is not None:
+                    status = "NotAccepted"
+
+                elif validation.find("Accepted") is not None:
+                    status = "Accepted"
+                    
+                else:
+                    status = "None"
+
+                error_text = None
+
+                error_tag = validation.find(".//Error/Message")
+                if error_tag is not None and error_tag.text:
+                    error_text = error_tag.text.strip()
+
+                results.append((
+                    path, status, error_text
+                ))
+
+        return results
+
+    except Exception as e:
+        error(f"Fehler beim Lesen der Log-Datei {log_file_path}: {e}")
+        return []
