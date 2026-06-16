@@ -1,8 +1,7 @@
 import os
 import subprocess
-import threading
 import tkinter as tk
-from tkinter import filedialog, messagebox, ttk
+from tkinter import filedialog, messagebox
 
 import config
 
@@ -22,15 +21,16 @@ entry_dest = None
 mode_var = tk.StringVar(value="directory")
 transfer_mode = tk.StringVar(value="copy")
 
-progress_var = tk.DoubleVar(value=0)
-
 # -----------------------------
-# UI BASE
+# MAIN
 # -----------------------------
 main = tk.Frame(root, bg="#f4f6f8", padx=20, pady=20)
 main.pack(fill="both", expand=True)
 
 
+# -----------------------------
+# CARD
+# -----------------------------
 def card(parent):
     frame = tk.Frame(parent, bg="white", padx=15, pady=15)
     frame.pack(fill="x", pady=10)
@@ -38,7 +38,7 @@ def card(parent):
 
 
 # -----------------------------
-# HELPERS
+# DISPLAY UPDATE
 # -----------------------------
 def refresh_source_display():
     entry_source.delete(0, tk.END)
@@ -51,31 +51,37 @@ def refresh_source_display():
         entry_source.insert(0, f"{len(source_paths)} Elemente ausgewählt")
 
 
+# -----------------------------
+# SOURCE SELECT
+# -----------------------------
 def select_source():
     global source_paths
 
     if mode_var.get() == "directory":
-        folder = filedialog.askdirectory()
+        folder = filedialog.askdirectory(title="Quellordner auswählen")
         if folder:
             source_paths = [folder]
             refresh_source_display()
 
     else:
-        files = filedialog.askopenfilenames()
+        files = filedialog.askopenfilenames(title="Dateien auswählen")
         if files:
             source_paths = list(files)
             refresh_source_display()
 
 
+# -----------------------------
+# DEST SELECT
+# -----------------------------
 def select_dest():
-    folder = filedialog.askdirectory()
+    folder = filedialog.askdirectory(title="Zielordner auswählen")
     if folder:
         entry_dest.delete(0, tk.END)
         entry_dest.insert(0, folder)
 
 
 # -----------------------------
-# BUILD RCLONE COMMAND
+# BUILD COMMAND (WICHTIG)
 # -----------------------------
 def build_command():
     dest = entry_dest.get().strip()
@@ -88,128 +94,105 @@ def build_command():
         transfer_mode.get(),
     ]
 
-    # COPY / MOVE LOGIC
-    for src in fixed_sources:
-        cmd.append(src)
+    # COPY / MOVE LOGIK
+    if mode_var.get() == "directory":
+        # 1 Ordner → inkl. Name
+        src = fixed_sources[0]
+        folder_name = os.path.basename(src.rstrip("/"))
+        cmd += [src, os.path.join(fixed_dest, folder_name).replace("\\", "/")]
 
-        # ORDNER-LOGIK: Ordnername behalten
-        if os.path.isdir(src):
-            folder_name = os.path.basename(src.rstrip("/"))
-            cmd.append(os.path.join(fixed_dest, folder_name).replace("\\", "/"))
-        else:
-            cmd.append(fixed_dest)
-
-    # REMOVE FLAG für MOVE
-    if transfer_mode.get() == "move":
-        cmd.append("--delete-after")
-
-    cmd += ["--progress"]
+    else:
+        # Dateien → direkt in Ziel
+        cmd += fixed_sources
+        cmd += [fixed_dest]
 
     return cmd
 
 
 # -----------------------------
-# RUN PROCESS + PROGRESS
+# RUN
 # -----------------------------
 def start_transfer():
     if not source_paths:
-        messagebox.showerror("Fehler", "Quelle fehlt")
+        messagebox.showerror("Fehler", "Bitte Quelle auswählen")
         return
 
     dest = entry_dest.get().strip()
     if not dest:
-        messagebox.showerror("Fehler", "Ziel fehlt")
+        messagebox.showerror("Fehler", "Bitte Ziel auswählen")
         return
 
     if not os.path.exists(config.RCLONE_PATH):
         messagebox.showerror("Fehler", "Rclone nicht gefunden")
         return
 
-    def worker():
-        try:
-            cmd = build_command()
+    cmd = build_command()
 
-            process = subprocess.Popen(
-                cmd,
-                stdout=subprocess.PIPE,
-                stderr=subprocess.STDOUT,
-                text=True
-            )
+    print("COMMAND:", cmd)
 
-            for line in process.stdout:
-                print(line.strip())
+    try:
+        result = subprocess.run(
+            cmd,
+            check=True,
+            capture_output=True,
+            text=True
+        )
 
-                # SIMPLE PROGRESS SIMULATION
-                if "%" in line:
-                    try:
-                        percent = float(line.split("%")[0].split()[-1])
-                        root.after(0, lambda p=percent: progress_var.set(p))
-                    except:
-                        pass
+        messagebox.showinfo("Erfolg", "Transfer abgeschlossen")
 
-            process.wait()
-
-            if process.returncode == 0:
-                root.after(0, lambda: messagebox.showinfo("OK", "Fertig"))
-                root.after(0, lambda: progress_var.set(100))
-            else:
-                root.after(0, lambda: messagebox.showerror("Fehler", "Rclone Fehler"))
-
-        except Exception as e:
-            root.after(0, lambda: messagebox.showerror("Fehler", str(e)))
-
-    threading.Thread(target=worker, daemon=True).start()
+    except subprocess.CalledProcessError as e:
+        messagebox.showerror(
+            "Rclone Fehler",
+            f"Exit Code: {e.returncode}\n\n{e.stderr or e.stdout}"
+        )
 
 
 # -----------------------------
 # UI
 # -----------------------------
-c1 = card(main)
 
+c1 = card(main)
 tk.Label(c1, text="Quelle", bg="white", font=("Arial", 11, "bold")).pack(anchor="w")
 
 entry_source = tk.Entry(c1)
 entry_source.pack(fill="x", pady=5)
 
-tk.Button(c1, text="Quelle auswählen", command=select_source).pack(anchor="w")
+tk.Button(
+    c1,
+    text="Quelle auswählen",
+    bg="#2f80ed",
+    fg="white",
+    command=select_source
+).pack(anchor="w", pady=5)
 
 
 c2 = card(main)
-
 tk.Label(c2, text="Ziel", bg="white", font=("Arial", 11, "bold")).pack(anchor="w")
 
 entry_dest = tk.Entry(c2)
 entry_dest.pack(fill="x", pady=5)
 
-tk.Button(c2, text="Ziel auswählen", command=select_dest).pack(anchor="w")
+tk.Button(
+    c2,
+    text="Ziel auswählen",
+    bg="#2f80ed",
+    fg="white",
+    command=select_dest
+).pack(anchor="w", pady=5)
 
 
 c3 = card(main)
+tk.Label(c3, text="Quelle Typ", bg="white", font=("Arial", 11, "bold")).pack(anchor="w")
 
-tk.Label(c3, text="Modus", bg="white").pack(anchor="w")
-
-tk.Radiobutton(c3, text="Ordner", variable=mode_var, value="directory").pack(anchor="w")
-tk.Radiobutton(c3, text="Dateien", variable=mode_var, value="files").pack(anchor="w")
+tk.Radiobutton(c3, text="Ordner", variable=mode_var, value="directory", bg="white").pack(anchor="w")
+tk.Radiobutton(c3, text="Dateien", variable=mode_var, value="files", bg="white").pack(anchor="w")
 
 
 c4 = card(main)
+tk.Label(c4, text="Transfer Modus", bg="white", font=("Arial", 11, "bold")).pack(anchor="w")
 
-tk.Label(c4, text="Transfer", bg="white").pack(anchor="w")
-
-tk.Radiobutton(c4, text="Copy", variable=transfer_mode, value="copy").pack(anchor="w")
-tk.Radiobutton(c4, text="Move", variable=transfer_mode, value="move").pack(anchor="w")
-
-
-# -----------------------------
-# PROGRESS BAR
-# -----------------------------
-tk.Label(main, text="Fortschritt", bg="#f4f6f8").pack(anchor="w")
-
-ttk.Progressbar(
-    main,
-    variable=progress_var,
-    maximum=100
-).pack(fill="x", pady=10)
+tk.Radiobutton(c4, text="Copy", variable=transfer_mode, value="copy", bg="white").pack(anchor="w")
+tk.Radiobutton(c4, text="Move", variable=transfer_mode, value="move", bg="white").pack(anchor="w")
 
 
 tk.Button(
@@ -220,6 +203,5 @@ tk.Button(
     height=2,
     command=start_transfer
 ).pack(fill="x", pady=15)
-
 
 root.mainloop()
