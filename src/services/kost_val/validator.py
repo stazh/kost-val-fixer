@@ -8,14 +8,14 @@ import config
 
 from services.xml.logging import info, warning, error, success
 
-def validate_files(invalid_validations: list) -> None:
+def validate_files(converted_files: list) -> None:
     """
-    Führt den Validator-Command für alle Dateien in invalid_validations aus
+    Führt den Validator-Command für alle Dateien in converted_files aus
     und protokolliert die Ergebnisse sauber.
     """
     try:
-        for error_entry in invalid_validations:
-            file_path = str(error_entry["filePath"])
+        for entry in converted_files:
+            file_path = str(entry[0])
             info(f"Starte Validierung für Datei: {file_path}")
 
             try:
@@ -46,7 +46,8 @@ def validate_files(invalid_validations: list) -> None:
             except Exception as ex:
                 error(f"Fehler beim Validator-Aufruf für {file_path}: {ex}")
 
-        read_log_file(files = invalid_validations, first_validation = True)
+        files = [entry[0] for entry in converted_files]
+        read_log_file(files = files, first_validation = False)
 
     except Exception as e:
         error(f"Fehler beim Validieren der Dateien: {e}")
@@ -130,7 +131,7 @@ def read_log_file(files = [], folder_path = None, first_validation = False) -> N
             for file in files:
                 log_file_path = os.path.join(user_home, config.LOG_FOLDER_PATH, f"{os.path.basename(file)}{config.LOG_FILE_EXTENSION}")
                 if os.path.exists(log_file_path):
-                    results = read_log_file_content(log_file_path)
+                    results.append(read_log_file_content(log_file_path)[0])
                     os.remove(log_file_path)
 
         if folder_path is not None:

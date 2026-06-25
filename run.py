@@ -74,16 +74,20 @@ def load_data():
 # =====================================================
 
 def on_double_click(event):
-    row = tree3.identify_row(event.y)
-    col = tree3.identify_column(event.x)
+    tree = event.widget
+
+    row = tree.identify_row(event.y)
+    col = tree.identify_column(event.x)
 
     if not row:
         return
 
-    values = tree3.item(row, "values")
+    values = tree.item(row, "values")
 
+    # Datei-Spalte
     if col == "#1":
         file_path = values[0]
+
         folder = os.path.dirname(file_path)
 
         subprocess.run(["explorer", folder])
@@ -95,7 +99,7 @@ def on_double_click(event):
         root.clipboard_append(text)
         root.update()
 
-        messagebox.showinfo("Copy", "Text kopiert!")
+        messagebox.showinfo("Kopiert", "Text kopiert")
 
 # =====================================================
 # REFRESH UI (IMPORTANT FIX)
@@ -243,7 +247,7 @@ content = tk.Frame(b4, bg="white")
 content.pack(fill="both", expand=True)
 
 # =====================================================
-# LEFT CARD (Konvertierung)
+# CARD (Konvertierung)
 # =====================================================
 left_card = tk.Frame(content, bg="white", bd=1, relief="solid")
 left_card.pack(fill="x", pady=10)
@@ -296,7 +300,7 @@ tree4.bind("<Double-1>", on_double_click)
 step4_filter.bind("<<ComboboxSelected>>", apply_step4)
 
 # =====================================================
-# RIGHT CARD (Validierung)
+# CARD (Validierung)
 # =====================================================
 right_card = tk.Frame(content, bg="white", bd=1, relief="solid")
 right_card.pack(fill="x", pady=10)

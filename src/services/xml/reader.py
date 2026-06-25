@@ -1,11 +1,13 @@
-from tkinter import filedialog
+import json
+import os
+from tkinter import filedialog, messagebox
 import xml.etree.ElementTree as ET
 
 import config
 
 from app import root
 
-from services.kost_val.validator import validate_files
+from services.kost_val.validator import create_json_file, validate_files
 
 from services.xml.logging import (
     info,
@@ -63,10 +65,10 @@ def fix_formats() -> None:
         info(f"{len(invalid_validations)} ungültige Validierungen gefunden.", console=True)
 
         if invalid_validations:
-            process_validations(invalid_validations)
+            converted_files = process_validations(invalid_validations)
 
             info("Starte KOST-Val Revalidierung...")
-            validate_files(invalid_validations)
+            validate_files(converted_files)
 
         else:
             success("Keine ungültigen Validierungen gefunden.", console=True)
@@ -121,7 +123,9 @@ def extract_invalid_validations(root_element) -> list:
     return invalid_validations
 
 
-def process_validations(invalid_validations: list) -> None:
+def process_validations(invalid_validations: list) -> list:
+    results= []
+    json_data_path = create_json_file()
     for validation in invalid_validations:
         file_path = str(validation["filePath"])
         modules = validation.get("modul", [])
@@ -132,6 +136,9 @@ def process_validations(invalid_validations: list) -> None:
         file_type, fixer = get_file_handler(file_path)
 
         if not file_type:
+            results.append((
+                file_path, "Nicht unterstützt", "Übersprungen (wird zurzeit nicht unterstützt)"
+            ))
             unsupported_file(file_path)
             continue
 
@@ -153,6 +160,9 @@ def process_validations(invalid_validations: list) -> None:
                 action == config.PRINT
                 and config.PDF_FONT_MESSAGE in error_message
             ):
+                results.append((
+                    file_path, "Nicht unterstützt", "Übersprungen (wird zurzeit nicht unterstützt)"
+                ))
                 warning(f"{file_path} übersprungen (PDF_FONT_MESSAGE)")
                 continue
 
@@ -165,10 +175,26 @@ def process_validations(invalid_validations: list) -> None:
                 conversion_result(file_path, solved)
 
                 if solved:
+                    results.append((
+                        file_path, "Konvertiert", None
+                    ))
                     break
 
             except Exception as action_error:
+                results.append((
+                    file_path, "Fehler", action_error
+                ))
                 error(f"Fehler bei Aktion '{action}' für {file_path}: {action_error}")
+
+    with open(json_data_path, "r", encoding="utf-8") as datei:
+        content = json.load(datei)
+        
+    content["converted_files"] = results
+
+    with open(json_data_path, "w", encoding="utf-8") as datei:
+        json.dump(content, datei, indent=4)
+
+    return results
 
 
 def read_log_file_content(log_file_path: str) -> list:
@@ -187,7 +213,6 @@ def read_log_file_content(log_file_path: str) -> list:
                     .replace("->", "")
                     .strip()
                 )
-
                 if validation.find("Valid") is not None:
                     status = "Valid"
 
