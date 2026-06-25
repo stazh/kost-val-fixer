@@ -38,35 +38,8 @@ container.pack(fill="both", expand=True, padx=20, pady=20)
 # GLOBAL DATA
 # =====================================================
 data_step3 = []
-data_step4_validate = []
+data_step5_validate = []
 data_step4_convert = []
-
-# =====================================================
-# COPY (FIXED: row + cell + whole row optional)
-# =====================================================
-def copy_cell(event):
-    tree = event.widget
-    row_id = tree.identify_row(event.y)
-    col_id = tree.identify_column(event.x)
-
-    if not row_id:
-        return
-
-    values = tree.item(row_id, "values")
-
-    # wenn auf Zelle geklickt
-    if col_id and col_id != "#0":
-        index = int(col_id.replace("#", "")) - 1
-        if 0 <= index < len(values):
-            text = values[index]
-        else:
-            text = " | ".join(values)
-    else:
-        text = " | ".join(values)
-
-    root.clipboard_clear()
-    root.clipboard_append(str(text))
-    root.update()
 
 # =====================================================
 # FILTER
@@ -82,7 +55,7 @@ def filter_tree(tree, data, col, value):
 # LOAD DATA
 # =====================================================
 def load_data():
-    global data_step3, data_step4_validate, data_step4_convert
+    global data_step3, data_step5_validate, data_step4_convert
 
     path = os.path.join(os.path.expanduser("~"), "DATA_KOST_VAL_FIXER", "data.json")
 
@@ -93,16 +66,44 @@ def load_data():
         content = json.load(f)
 
     data_step3 = content.get("first_validation", [])
-    data_step4_validate = content.get("second_validation", [])
+    data_step5_validate = content.get("second_validation", [])
     data_step4_convert = content.get("converted_files", [])
+
+# =====================================================
+# DOUBLE CLICK HANDLER
+# =====================================================
+
+def on_double_click(event):
+    row = tree3.identify_row(event.y)
+    col = tree3.identify_column(event.x)
+
+    if not row:
+        return
+
+    values = tree3.item(row, "values")
+
+    if col == "#1":
+        file_path = values[0]
+        folder = os.path.dirname(file_path)
+
+        subprocess.run(["explorer", folder])
+
+    elif col == "#3":
+        text = values[2]
+
+        root.clipboard_clear()
+        root.clipboard_append(text)
+        root.update()
+
+        messagebox.showinfo("Copy", "Text kopiert!")
 
 # =====================================================
 # REFRESH UI (IMPORTANT FIX)
 # =====================================================
 def refresh_ui():
-    apply_step3_filter()
-    apply_step4_left()
-    apply_step4_right()
+    apply_step3()
+    apply_step4()
+    apply_step5()
 
 # =====================================================
 # RUN COMMAND
@@ -205,6 +206,7 @@ tk.Button(
 ).pack(side="right")
 
 tree3 = ttk.Treeview(b3, columns=("file", "status", "message"), show="headings", height=6)
+
 tree3.heading("file", text="Datei")
 tree3.heading("status", text="Status")
 tree3.heading("message", text="Nachricht")
@@ -215,17 +217,15 @@ tree3.column("message", width=400)
 
 tree3.pack(fill="x", pady=10)
 
-tree3.bind("<Double-1>", copy_cell)
-
 step3_filter = ttk.Combobox(b3, values=["ALL", "Valid", "Accepted", "Invalid", "NotAccepted"])
 step3_filter.set("ALL")
 step3_filter.pack(anchor="w")
 
-def apply_step3_filter(event=None):
+def apply_step3(event=None):
     filter_tree(tree3, data_step3, 1, step3_filter.get())
 
-step3_filter.bind("<<ComboboxSelected>>", apply_step3_filter)
-
+tree3.bind("<Double-1>", on_double_click)
+step3_filter.bind("<<ComboboxSelected>>", apply_step3)
 # =====================================================
 # STEP 4
 # =====================================================
@@ -280,7 +280,6 @@ tree4.column("status", width=100, stretch=False)
 tree4.column("message", width=400)
 
 tree4.pack(fill="x", pady=10)
-tree4.bind("<Double-1>", copy_cell)
 
 step4_filter = ttk.Combobox(
     left_body,
@@ -290,11 +289,11 @@ step4_filter.set("ALL")
 step4_filter.pack(anchor="w")
 
 
-def apply_step4_left(event=None):
+def apply_step4(event=None):
     filter_tree(tree4, data_step4_convert, 1, step4_filter.get())
 
-
-step4_filter.bind("<<ComboboxSelected>>", apply_step4_left)
+tree4.bind("<Double-1>", on_double_click)
+step4_filter.bind("<<ComboboxSelected>>", apply_step4)
 
 # =====================================================
 # RIGHT CARD (Validierung)
@@ -318,37 +317,36 @@ tk.Label(
 right_body = tk.Frame(right_card, bg="white")
 right_body.pack(fill="both", padx=10, pady=10)
 
-tree4r = ttk.Treeview(
+tree5 = ttk.Treeview(
     right_body,
     columns=("file", "status", "message"),
     show="headings",
     height=6
 )
 
-tree4r.heading("file", text="Datei")
-tree4r.heading("status", text="Status")
-tree4r.heading("message", text="Nachricht")
+tree5.heading("file", text="Datei")
+tree5.heading("status", text="Status")
+tree5.heading("message", text="Nachricht")
 
-tree4r.column("file", width=600)
-tree4r.column("status", width=100, stretch=False)
-tree4r.column("message", width=400)
+tree5.column("file", width=600)
+tree5.column("status", width=100, stretch=False)
+tree5.column("message", width=400)
 
-tree4r.pack(fill="x", pady=10)
-tree4r.bind("<Double-1>", copy_cell)
+tree5.pack(fill="x", pady=10)
 
-step4_right_filter = ttk.Combobox(
+step5_filter = ttk.Combobox(
     right_body,
     values=["ALL", "Valid", "Accepted", "Invalid", "NotAccepted"]
 )
-step4_right_filter.set("ALL")
-step4_right_filter.pack(anchor="w")
+step5_filter.set("ALL")
+step5_filter.pack(anchor="w")
 
 
-def apply_step4_right(event=None):
-    filter_tree(tree4r, data_step4_validate, 1, step4_right_filter.get())
+def apply_step5(event=None):
+    filter_tree(tree5, data_step5_validate, 1, step5_filter.get())
 
-
-step4_right_filter.bind("<<ComboboxSelected>>", apply_step4_right)
+tree5.bind("<Double-1>", on_double_click)
+step5_filter.bind("<<ComboboxSelected>>", apply_step5)
 
 # INIT
 load_data()
