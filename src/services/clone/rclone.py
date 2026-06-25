@@ -18,8 +18,8 @@ source_paths = []
 entry_source = None
 entry_dest = None
 
-mode_var = tk.StringVar(value="directory")
-transfer_mode = tk.StringVar(value="copy")
+mode_var = tk.StringVar(value=None)
+transfer_mode = tk.StringVar(value=None)
 
 # -----------------------------
 # MAIN
@@ -81,84 +81,89 @@ def select_dest():
 
 
 # -----------------------------
-# BUILD COMMAND (WICHTIG)
+# RUN COMMAND (WICHTIG)
 # -----------------------------
-def build_command():
-    dest = entry_dest.get().strip()
+def run_command():
+    if not source_paths:
+        messagebox.showerror("Fehler", "Keine Quelle ausgewählt")
+        return
+
+    dest = entry_dest.get().strip().replace("\\", "/")
+
+    if not dest:
+        messagebox.showerror("Fehler", "Kein Ziel ausgewählt")
+        return
 
     fixed_sources = [p.replace("\\", "/") for p in source_paths]
-    fixed_dest = dest.replace("\\", "/")
+    fixed_dest = dest.rstrip("/")
 
-    cmd = [
-        config.RCLONE_PATH,
-        transfer_mode.get(),
-    ]
 
-    # COPY / MOVE LOGIK
     if mode_var.get() == "directory":
-        # 1 Ordner → inkl. Name
         src = fixed_sources[0]
         folder_name = os.path.basename(src.rstrip("/"))
-        cmd += [src, os.path.join(fixed_dest, folder_name).replace("\\", "/")]
+
+        cmd = [
+            config.RCLONE_PATH,
+            transfer_mode.get(),
+            src,
+            f"{fixed_dest}/{folder_name}"
+        ]
+
+        print("COMMAND:", cmd)
+
+        try:
+            subprocess.run(cmd, check=True, capture_output=True, text=True)
+
+            messagebox.showinfo("OK", "Transfer abgeschlossen")
+
+        except subprocess.CalledProcessError as e:
+            messagebox.showerror("Rclone Fehler", e.stderr or e.stdout)
 
     else:
-        # Dateien → direkt in Ziel
-        cmd += fixed_sources
-        cmd += [fixed_dest]
+        for file_path in fixed_sources:
+            file_path = file_path.replace("\\", "/")
 
-    return cmd
+            cmd = [
+                config.RCLONE_PATH,
+                transfer_mode.get(),
+                file_path,
+                fixed_dest,
+                "--create-empty-src-dirs=false"
+            ]
 
+            try:
+                subprocess.run(cmd, check=True)
+
+            except subprocess.CalledProcessError as e:
+                messagebox.showerror("Rclone Fehler", e.stderr or e.stdout)
+                return
+
+        messagebox.showinfo("OK", "Alle Dateien übertragen")
 
 # -----------------------------
-# RUN
+# START
 # -----------------------------
 def start_transfer():
-    if not source_paths:
-        messagebox.showerror("Fehler", "Bitte Quelle auswählen")
-        return
-
-    dest = entry_dest.get().strip()
-    if not dest:
-        messagebox.showerror("Fehler", "Bitte Ziel auswählen")
-        return
-
-    if not os.path.exists(config.RCLONE_PATH):
-        messagebox.showerror("Fehler", "Rclone nicht gefunden")
-        return
-
-    cmd = build_command()
-
-    print("COMMAND:", cmd)
-
-    try:
-        result = subprocess.run(
-            cmd,
-            check=True,
-            capture_output=True,
-            text=True
-        )
-
-        messagebox.showinfo("Erfolg", "Transfer abgeschlossen")
-
-    except subprocess.CalledProcessError as e:
-        messagebox.showerror(
-            "Rclone Fehler",
-            f"Exit Code: {e.returncode}\n\n{e.stderr or e.stdout}"
-        )
-
+    run_command()
 
 # -----------------------------
 # UI
 # -----------------------------
 
 c1 = card(main)
-tk.Label(c1, text="Quelle", bg="white", font=("Arial", 11, "bold")).pack(anchor="w")
+tk.Label(c1, text="Quelle Typ", bg="white", font=("Arial", 11, "bold")).pack(anchor="w")
 
-entry_source = tk.Entry(c1)
+tk.Radiobutton(c1, text="Ordner", variable=mode_var, value="directory", bg="white", command=lambda: mode_var.set("directory")).pack(anchor="w")
+tk.Radiobutton(c1, text="Dateien", variable=mode_var, value="files", bg="white", command=lambda: mode_var.set("files")).pack(anchor="w")
+
+c2 = card(main)
+tk.Label(c2, text="Quelle", bg="white", font=("Arial", 11, "bold")).pack(anchor="w")
+
+entry_source = tk.Entry(c2)
 entry_source.pack(fill="x", pady=5)
 
 tk.Button(
-    c1,
+    c2,
     text="Quelle auswählen",
     bg="#2f80ed",
     fg="white",
@@ -166,33 +171,25 @@ tk.Button(
 ).pack(anchor="w", pady=5)
 
 
-c2 = card(main)
-tk.Label(c2, text="Ziel", bg="white", font=("Arial", 11, "bold")).pack(anchor="w")
+c3 = card(main)
+tk.Label(c3, text="Ziel", bg="white", font=("Arial", 11, "bold")).pack(anchor="w")
 
-entry_dest = tk.Entry(c2)
+entry_dest = tk.Entry(c3)
 entry_dest.pack(fill="x", pady=5)
 
 tk.Button(
-    c2,
+    c3,
     text="Ziel auswählen",
     bg="#2f80ed",
     fg="white",
     command=select_dest
 ).pack(anchor="w", pady=5)
 
-
-c3 = card(main)
-tk.Label(c3, text="Quelle Typ", bg="white", font=("Arial", 11, "bold")).pack(anchor="w")
-
-tk.Radiobutton(c3, text="Ordner", variable=mode_var, value="directory", bg="white").pack(anchor="w")
-tk.Radiobutton(c3, text="Dateien", variable=mode_var, value="files", bg="white").pack(anchor="w")
-
-
 c4 = card(main)
 tk.Label(c4, text="Transfer Modus", bg="white", font=("Arial", 11, "bold")).pack(anchor="w")
 
-tk.Radiobutton(c4, text="Copy", variable=transfer_mode, value="copy", bg="white").pack(anchor="w")
-tk.Radiobutton(c4, text="Move", variable=transfer_mode, value="move", bg="white").pack(anchor="w")
+tk.Radiobutton(c4, text="Copy", variable=transfer_mode, value="copy", bg="white", command=lambda: transfer_mode.set("copy")).pack(anchor="w")
+tk.Radiobutton(c4, text="Move", variable=transfer_mode, value="move", bg="white", command=lambda: transfer_mode.set("move")).pack(anchor="w")
 
 
 tk.Button(
