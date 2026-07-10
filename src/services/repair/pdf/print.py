@@ -5,7 +5,7 @@ from services.xml.logging import info, warning, error, success
 from services.repair.pdf.convert import convert
 import config
 
-def createPDF(file_path: str) -> bool:
+def createPDF(file_path: str) -> tuple[bool, str]:
     """
     Rendert die PDF-Seiten neu, speichert sie als echte PDF (Fonts eingebettet).
     Originaldatei wird ersetzt.
@@ -38,4 +38,4 @@ def createPDF(file_path: str) -> bool:
 
     except Exception as e:
         error(f"Fehler beim Neu-Rendern der PDF {file_path}: {e}")
-        return False
+        return (False, file_path)

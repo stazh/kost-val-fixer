@@ -5,7 +5,7 @@ import time
 import config
 from services.xml.logging import info, warning, error, success
 
-def convert(file_path: str) -> bool:
+def convert(file_path: str) -> tuple[bool, str]:
     """
     Konvertiert eine Datei in PDF.
     Löscht die Originaldatei nur, wenn sie keine PDF ist.
@@ -51,13 +51,13 @@ def convert(file_path: str) -> bool:
                 else:
                     info(f"Originaldatei behalten (PDF): {file_path}")
 
-                return True
+                return (True, target_path)
 
             time.sleep(1)
 
         warning(f"Keine konvertierte Datei gefunden: {output_path}")
-        return False
+        return (False, file_path)
 
     except Exception as e:
         error(f"Fehler beim Konvertieren von {file_path}: {e}")
-        return False
+        return (False, file_path)

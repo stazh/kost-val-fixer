@@ -2,14 +2,14 @@ import os
 from win32com.client import Dispatch
 from services.xml.logging import info, warning, error, success
 
-def convert(file_path: str) -> bool:
+def convert(file_path: str) -> tuple[bool, str]:
     excel = None
     workbook = None
 
     try:
         if not os.path.isfile(file_path):
             error(f"Datei nicht gefunden: {file_path}")
-            return False
+            return (False, file_path)
 
         folder = os.path.dirname(file_path)
         base_name = os.path.splitext(os.path.basename(file_path))[0]
@@ -42,11 +42,11 @@ def convert(file_path: str) -> bool:
         except Exception as e:
             warning(f"Original konnte nicht gelöscht werden: {e}")
 
-        return True
+        return (True, output_file)
 
     except Exception as e:
         error(f"Fehler bei der Konvertierung: {e}")
-        return False
+        return (False, file_path)
 
     finally:
         try:

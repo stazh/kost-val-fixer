@@ -54,7 +54,7 @@ def run_vlc_to_mp4(input_path: str, output_path: str) -> bool:
         return False
 
 
-def convert(file_path: str) -> bool:
+def convert(file_path: str) -> tuple[bool, str]:
     """
     Konvertiert Datei zu MP4 und löscht die Originaldatei.
     """
@@ -75,7 +75,7 @@ def convert(file_path: str) -> bool:
 
         if not ok:
             error(f"VLC Konvertierung fehlgeschlagen: {file_path}")
-            return False
+            return (False, file_path)
 
         # Originaldatei löschen
         try:
@@ -85,8 +85,8 @@ def convert(file_path: str) -> bool:
             warning(f"Original konnte nicht gelöscht werden: {e}")
 
         success(f"MP4 erstellt: {output_file}")
-        return True
+        return (True, output_file)
 
     except Exception as e:
         error(f"Fehler beim Konvertieren: {e}")
-        return False
+        return (False, file_path)

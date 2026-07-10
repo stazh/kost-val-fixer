@@ -12,7 +12,7 @@ from services.xml.logging import (
 )
 
 
-def convert(file_path: str) -> bool:
+def convert(file_path: str) -> tuple[bool, str]:
     """
     Konvertiert Bilder mit IrfanView.
 
@@ -29,7 +29,7 @@ def convert(file_path: str) -> bool:
         if not os.path.isfile(irfanview_path):
 
             error(f"IrfanView nicht gefunden: {irfanview_path}")
-            return False
+            return (False, file_path)
 
         folder = os.path.dirname(file_path)
         file_name = os.path.basename(file_path)
@@ -67,11 +67,11 @@ def convert(file_path: str) -> bool:
                 f"IrfanView Fehler bei {file_name} | "
                 f"Code: {result.returncode} | STDERR: {result.stderr.strip()}"
             )
-            return False
+            return (False, file_path)
 
         if not os.path.exists(temp_output_path):
             warning(f"Konvertierte Datei fehlt: {temp_output_path}")
-            return False
+            return (False, file_path)
 
         # Original löschen
         if os.path.exists(file_path):
@@ -81,8 +81,8 @@ def convert(file_path: str) -> bool:
         shutil.move(temp_output_path, final_output_path)
 
         success(f"Bild erfolgreich konvertiert: {os.path.basename(final_output_path)}")
-        return True
+        return (True, final_output_path)
 
     except Exception as e:
         error(f"Fehler bei Bild-Konvertierung von {file_path}: {e}")
-        return False
+        return (False, file_path)

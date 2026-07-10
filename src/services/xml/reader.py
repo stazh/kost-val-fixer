@@ -142,8 +142,6 @@ def process_validations(invalid_validations: list) -> list:
             unsupported_file(file_path)
             continue
 
-        solved = False
-
         for modul in modules:
             action = (
                 config.SUPPORTED_ERRORS
@@ -164,25 +162,25 @@ def process_validations(invalid_validations: list) -> list:
                     file_path, "Nicht unterstützt", "Übersprungen (wird zurzeit nicht unterstützt)"
                 ))
                 warning(f"{file_path} übersprungen (PDF_FONT_MESSAGE)")
-                continue
+                break
 
             try:
-                solved = ACTION_MAPPING[action](
+                success, path = ACTION_MAPPING[action](
                     fixer,
                     file_path
                 )
 
-                conversion_result(file_path, solved)
+                conversion_result(file_path, success)
 
-                if solved:
+                if success:
                     results.append((
-                        file_path, "Konvertiert", None
+                        path, "Konvertiert", None
                     ))
                     break
 
             except Exception as action_error:
                 results.append((
-                    file_path, "Fehler", action_error
+                    path, "Fehler", action_error
                 ))
                 error(f"Fehler bei Aktion '{action}' für {file_path}: {action_error}")
 
