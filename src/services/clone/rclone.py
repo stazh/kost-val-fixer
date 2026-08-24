@@ -18,9 +18,8 @@ source_paths = []
 entry_source = None
 entry_dest = None
 
-mode_var = tk.StringVar(value=None)
-transfer_mode = tk.StringVar(value=None)
-
+mode_var = tk.StringVar(value="directory")
+transfer_mode = tk.StringVar(value="copy")
 # -----------------------------
 # MAIN
 # -----------------------------
@@ -153,8 +152,21 @@ def start_transfer():
 c1 = card(main)
 tk.Label(c1, text="Quelle Typ", bg="white", font=("Arial", 11, "bold")).pack(anchor="w")
 
-tk.Radiobutton(c1, text="Ordner", variable=mode_var, value="directory", bg="white", command=lambda: mode_var.set("directory")).pack(anchor="w")
-tk.Radiobutton(c1, text="Dateien", variable=mode_var, value="files", bg="white", command=lambda: mode_var.set("files")).pack(anchor="w")
+tk.Radiobutton(
+    c1,
+    text="Ordner",
+    variable=mode_var,
+    value="directory",
+    bg="white"
+).pack(anchor="w")
+
+tk.Radiobutton(
+    c1,
+    text="Dateien",
+    variable=mode_var,
+    value="files",
+    bg="white"
+).pack(anchor="w")
 
 c2 = card(main)
 tk.Label(c2, text="Quelle", bg="white", font=("Arial", 11, "bold")).pack(anchor="w")
@@ -188,8 +200,21 @@ tk.Button(
 c4 = card(main)
 tk.Label(c4, text="Transfer Modus", bg="white", font=("Arial", 11, "bold")).pack(anchor="w")
 
-tk.Radiobutton(c4, text="Copy", variable=transfer_mode, value="copy", bg="white", command=lambda: transfer_mode.set("copy")).pack(anchor="w")
-tk.Radiobutton(c4, text="Move", variable=transfer_mode, value="move", bg="white", command=lambda: transfer_mode.set("move")).pack(anchor="w")
+tk.Radiobutton(
+    c4,
+    text="Copy",
+    variable=transfer_mode,
+    value="copy",
+    bg="white"
+).pack(anchor="w")
+
+tk.Radiobutton(
+    c4,
+    text="Move",
+    variable=transfer_mode,
+    value="move",
+    bg="white"
+).pack(anchor="w")
 
 
 tk.Button(
