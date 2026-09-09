@@ -35,10 +35,6 @@ def drucken(dialog):
 
         time.sleep(0.5)
 
-        # -------------------------------------------------
-        # Alle Buttons protokollieren
-        # -------------------------------------------------
-
         try:
             buttons = dialog.descendants(
                 control_type="Button"
@@ -65,10 +61,6 @@ def drucken(dialog):
                 f"Buttons konnten nicht aufgelistet werden: {e}"
             )
 
-        # -------------------------------------------------
-        # Drucken-Button suchen
-        # -------------------------------------------------
-
         button = dialog.child_window(
             title_re=r".*Drucken.*",
             control_type="Button"
@@ -89,10 +81,6 @@ def drucken(dialog):
             f"{button.window_text()!r}"
         )
 
-        # -------------------------------------------------
-        # Button fokussieren
-        # -------------------------------------------------
-
         try:
             button.set_focus()
             time.sleep(0.5)
@@ -101,10 +89,6 @@ def drucken(dialog):
             warning(
                 f"Drucken-Button konnte nicht fokussiert werden: {e}"
             )
-
-        # -------------------------------------------------
-        # Methode 1: UIA InvokePattern
-        # -------------------------------------------------
 
         try:
             info(
@@ -124,10 +108,6 @@ def drucken(dialog):
                 f"invoke() fehlgeschlagen: {e}"
             )
 
-        # -------------------------------------------------
-        # Methode 2: echter Mausklick
-        # -------------------------------------------------
-
         try:
             info(
                 "Versuche Drucken über click_input()..."
@@ -146,10 +126,6 @@ def drucken(dialog):
                 f"click_input() fehlgeschlagen: {e}"
             )
 
-        # -------------------------------------------------
-        # Methode 3: pywinauto click()
-        # -------------------------------------------------
-
         try:
             info(
                 "Versuche Drucken über click()..."
@@ -167,10 +143,6 @@ def drucken(dialog):
             warning(
                 f"click() fehlgeschlagen: {e}"
             )
-
-        # -------------------------------------------------
-        # Alles fehlgeschlagen
-        # -------------------------------------------------
 
         error(
             "Drucken konnte nicht ausgelöst werden."
@@ -236,10 +208,6 @@ def speicherfenster_finden(acrobat_hwnd):
 
     for _ in range(60):
 
-        # -------------------------------------------------
-        # Vordergrundfenster prüfen
-        # -------------------------------------------------
-
         try:
 
             hwnd = user32.GetForegroundWindow()
@@ -283,10 +251,6 @@ def speicherfenster_finden(acrobat_hwnd):
                 f"Fehler bei der Prüfung des "
                 f"Vordergrundfensters: {e}"
             )
-
-        # -------------------------------------------------
-        # Zusätzlich alle Fenster prüfen
-        # -------------------------------------------------
 
         try:
 
@@ -373,10 +337,6 @@ def speichern(dialog, datei):
             f"im Speicherdialog gefunden."
         )
 
-        # -------------------------------------------------
-        # Dateiname-Feld
-        # -------------------------------------------------
-
         filename = edits[len(edits) - 2]
 
         try:
@@ -399,10 +359,6 @@ def speichern(dialog, datei):
         info(
             f"Dateiname gesetzt: {datei}"
         )
-
-        # -------------------------------------------------
-        # Speichern-Button
-        # -------------------------------------------------
 
         button = dialog.child_window(
             title_re=r"^(Speichern|Save)$",
@@ -512,7 +468,6 @@ def createPDF(file_path: str) -> tuple[bool, str]:
     """
 
     try:
-
         info(
             f"Starte Neu-Rendern von PDF: "
             f"{file_path}"
@@ -550,10 +505,6 @@ def createPDF(file_path: str) -> tuple[bool, str]:
             f"Output: {output}"
         )
 
-        # -------------------------------------------------
-        # PDF öffnen
-        # -------------------------------------------------
-
         info(
             "Öffne PDF mit Adobe Acrobat..."
         )
@@ -563,10 +514,6 @@ def createPDF(file_path: str) -> tuple[bool, str]:
         )
 
         time.sleep(4)
-
-        # -------------------------------------------------
-        # Acrobat verbinden
-        # -------------------------------------------------
 
         try:
 
@@ -600,10 +547,6 @@ def createPDF(file_path: str) -> tuple[bool, str]:
 
             return False, file_path
 
-        # -------------------------------------------------
-        # Acrobat fokussieren
-        # -------------------------------------------------
-
         try:
 
             acrobat.set_focus()
@@ -616,10 +559,6 @@ def createPDF(file_path: str) -> tuple[bool, str]:
                 f"Acrobat konnte nicht "
                 f"fokussiert werden: {e}"
             )
-
-        # -------------------------------------------------
-        # Druckdialog öffnen
-        # -------------------------------------------------
 
         info(
             "Öffne Druckdialog..."
@@ -646,10 +585,6 @@ def createPDF(file_path: str) -> tuple[bool, str]:
             return False, file_path
 
         time.sleep(5)
-
-        # -------------------------------------------------
-        # Druckdialog suchen
-        # -------------------------------------------------
 
         try:
 
@@ -681,10 +616,6 @@ def createPDF(file_path: str) -> tuple[bool, str]:
 
             return False, file_path
 
-        # -------------------------------------------------
-        # DRUCKEN
-        # -------------------------------------------------
-
         if not drucken(druck):
 
             error(
@@ -694,10 +625,6 @@ def createPDF(file_path: str) -> tuple[bool, str]:
             acrobat_schliessen(app)
 
             return False, file_path
-
-        # -------------------------------------------------
-        # Warten bis Speicherdialog erscheint
-        # -------------------------------------------------
 
         time.sleep(3)
 
@@ -716,10 +643,6 @@ def createPDF(file_path: str) -> tuple[bool, str]:
 
             return False, file_path
 
-        # -------------------------------------------------
-        # SPEICHERN
-        # -------------------------------------------------
-
         if not speichern(
             dialog,
             input
@@ -733,10 +656,6 @@ def createPDF(file_path: str) -> tuple[bool, str]:
             acrobat_schliessen(app)
 
             return False, file_path
-
-        # -------------------------------------------------
-        # Auf Datei warten
-        # -------------------------------------------------
 
         if not warte_auf_datei(
             output,
@@ -752,17 +671,9 @@ def createPDF(file_path: str) -> tuple[bool, str]:
 
             return False, file_path
 
-        # -------------------------------------------------
-        # Acrobat schließen
-        # -------------------------------------------------
-
         acrobat_schliessen(
             app
         )
-
-        # -------------------------------------------------
-        # Original ersetzen
-        # -------------------------------------------------
 
         try:
 

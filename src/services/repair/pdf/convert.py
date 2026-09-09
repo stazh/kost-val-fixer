@@ -14,6 +14,9 @@ def convert(file_path: str) -> tuple[bool, str]:
         input_folder = config.INPUT_FOLDER_PATH
         output_folder = config.OUTPUT_FOLDER_PATH
 
+        if file_path.lower().endswith(".html") or file_path.lower().endswith(".htm"):
+            info(f"HTML-Datei wird konvertiert zu pdf bevor es im input ordner zu pdf/a-2u verschoben wird, weil sonst fehlt das css styling: {file_path}")
+
         file_name = os.path.basename(file_path)
         base_name, ext = os.path.splitext(file_name)
 
