@@ -1,7 +1,7 @@
 import json
 import subprocess
 import os
-from tkinter import Tk, filedialog, messagebox
+from tkinter import filedialog, messagebox
 from pathlib import Path
 
 import config
@@ -54,9 +54,6 @@ def validate_files(converted_files: list) -> None:
 
     
 def validate_files_from_folder() -> None:
-    root = Tk()
-    root.withdraw()
-
     folder_path = filedialog.askdirectory(title="Ordner auswählen")
 
     if not folder_path:
@@ -120,7 +117,6 @@ def read_log_file(files = [], folder_path = None, first_validation = False) -> N
     Liest die Log-Datei des Validators aus und extrahiert die relevanten Informationen.
     Gibt eine Liste von Validierungsergebnissen zurück. Löscht die Log-Dateien, wo nur eine Datei validiert wurde.
     """
-
     results = []
     user_home = os.path.expanduser("~")
     json_data_path = create_json_file()
@@ -133,7 +129,6 @@ def read_log_file(files = [], folder_path = None, first_validation = False) -> N
                 if os.path.exists(log_file_path):
                     results.append(read_log_file_content(log_file_path)[0])
                     os.remove(log_file_path)
-
         if folder_path is not None:
             log_file_path = os.path.join(user_home, config.LOG_FOLDER_PATH, f"{os.path.basename(folder_path)}{config.LOG_FILE_EXTENSION}")
             if os.path.exists(log_file_path):

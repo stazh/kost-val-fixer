@@ -5,8 +5,6 @@ import xml.etree.ElementTree as ET
 
 import config
 
-from app import root
-
 from services.kost_val.validator import create_json_file, validate_files
 
 from services.xml.logging import (
@@ -48,7 +46,6 @@ def fix_formats() -> None:
         file_path = filedialog.askopenfilename(
             title="Wählen Sie eine XML-Datei aus",
             filetypes=[("XML files", "*.xml")],
-            parent=root
         )
 
         if not file_path:

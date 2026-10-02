@@ -2,12 +2,6 @@ import sys
 import os
 import importlib
 import argparse
-import tkinter as tk
-
-# Globales Root-Fenster für alle MessageBoxen
-root = tk.Tk()
-root.withdraw()
-root.attributes("-topmost", True)
 
 # Aktuelles Arbeitsverzeichnis
 current_dir = os.path.dirname(os.path.abspath(__file__))
@@ -40,9 +34,9 @@ def execute_command(command: str) -> None:
     if command in COMMANDS:
         file_name, function_name, _ = COMMANDS[command]
         try:
-            module = importlib.import_module(file_name)  # Modul dynamisch importieren
-            func = getattr(module, function_name)  # Funktion aus dem Modul holen
-            func()  # Funktion ausführen
+            module = importlib.import_module(file_name)
+            func = getattr(module, function_name)
+            func()
         except ModuleNotFoundError as e:
             print(f'Fehler: Die Datei \'{file_name}.py\' wurde im services-Ordner nicht gefunden. Fehler: {e}')
         except AttributeError as e:

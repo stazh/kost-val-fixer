@@ -30,7 +30,8 @@ SUPPORTED_ERRORS = {
         "H) Metadaten": "convert",
         "K) Schrift-Validierung": "convert"
     },
-    "TIFF": {"C) Komprimierung": "convert"},
+    "TIFF": {"C) Komprimierung": "convert", "B) Jhove": "convert"},
+    "TIF": {"C) Komprimierung": "convert", "B) Jhove": "convert"},
     "AVI": {"3B) Zusaetzliche Formate": "convert"},
     "VOB": {"3B) Zusaetzliche Formate": "convert"},
     "GIF": {"A) Erkennung und Akzeptanz": "convert"},
@@ -39,7 +40,9 @@ SUPPORTED_ERRORS = {
     "MPG": {"A) Erkennung und Akzeptanz": "convert"},
     "XLS": {"A) Erkennung und Akzeptanz": "convert"},
     "DOC": {"A) Erkennung und Akzeptanz": "convert"},
+    "DOTX": {"A) Erkennung und Akzeptanz": "convert"},
     "DOCX": {"A) Erkennung und Akzeptanz": "convert"},
+    "PPTX": {"A) Erkennung und Akzeptanz": "convert"},
     "MSG": {"A) Erkennung und Akzeptanz": "convert"},
     "PPT": {"A) Erkennung und Akzeptanz": "convert"},
     "MOV": {"A) Erkennung und Akzeptanz": "convert"},
@@ -47,8 +50,10 @@ SUPPORTED_ERRORS = {
 }
 
 FILE_TYPE_MAPPING = {
+    ".dotx": ("DOTX", pdf),
+    ".pptx": ("PPTX", pdf),
     ".pdf": ("PDF", pdf),
-    ".tif": ("TIFF", picture),
+    ".tif": ("TIF", picture),
     ".tiff": ("TIFF", picture),
     ".xls": ("XLS", excel),
     ".avi": ("AVI", media),

@@ -1,5 +1,5 @@
 import os
-from tkinter import filedialog, Tk
+from tkinter import filedialog
 
 import config
 from services.xml.logging import info, warning, error, success, save_logs
@@ -70,9 +70,7 @@ def select_and_run_rename() -> bool:
     """
     Öffnet Dialog und startet Rename.
     """
-    root = Tk()
-    root.withdraw()
-
+    
     folder = filedialog.askdirectory(title="Ordner auswählen")
 
     if not folder:
