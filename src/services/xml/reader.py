@@ -122,6 +122,7 @@ def extract_invalid_validations(root_element) -> list:
 
 def process_validations(invalid_validations: list) -> list:
     results= []
+    app.screen_updating = False
     json_data_path = create_json_file()
     for validation in invalid_validations:
         file_path = str(validation["filePath"])
@@ -136,42 +137,45 @@ def process_validations(invalid_validations: list) -> list:
             results.append((
                 file_path, "Nicht unterstützt", "Übersprungen (wird zurzeit nicht unterstützt)"
             ))
+            
             unsupported_file(file_path)
+
+            error(f"Die Datei '{file_path}' wird nicht unterstützt.")
             continue
 
-        for modul in modules:
-            action = (
-                config.SUPPORTED_ERRORS
-                .get(file_type, {})
-                .get(modul)
-            )
+        supported_errors = config.SUPPORTED_ERRORS.get(file_type, {}).fromkeys(modules, file_type)
 
+        actions = [
+            (modul, supported_errors[modul])
+            for modul in modules
+            if supported_errors.get(modul)
+        ]
+        
+        for action in actions:
+            if not os.path.exists(file_path):
+                error(f"")
             if not action:
-                warning(f"{file_type}: Keine Aktion definiert für Modul '{modul}'")
+                save_logs()
+                if unknown_action := next((module for module in modules if module not in supported_errors), None):
+                    warning(f"{file_type}: Keine Aktion definiert für Modul '{unknown_action}'. Datei wird übersprungen.")
+                warning(f"{file_type}: Keine Aktion definiert für Modul '{action[0]}'. Datei wird übersprungen.")
                 continue
 
-            # PDF Font Sonderfall
-            if (
-                action == config.PRINT
-                and config.PDF_FONT_MESSAGE in error_message
-            ):
-                results.append((
-                    file_path, "Nicht unterstützt", "Übersprungen (wird zurzeit nicht unterstützt)"
-                ))
-                warning(f"{file_path} übersprungen (PDF_FONT_MESSAGE)")
-                break
-
             try:
-                success, path = ACTION_MAPPING[action](
+                if action[1] not in ACTION_MAPPING:
+                    warning(f"{file_type}: Keine Aktion definiert für Modul '{action[0]}'. Datei wird übersprungen.")
+                    continue
+                success, path = ACTION_MAPPING[config.PRINT if config.PRINT in actions else action[1]](
                     fixer,
                     file_path
                 )
-
+                
                 conversion_result(file_path, success)
 
                 if success:
                     results.append((
-                        path, "Konvertiert", None
+                        path, "Konvertiert", None,
+                        action[1]
                     ))
                     break
 

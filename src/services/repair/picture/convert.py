@@ -39,9 +39,6 @@ def convert(file_path: str) -> tuple[bool, str]:
         # GIF -> PNG
         output_extension = ".png" if extension == ".gif" else extension
 
-        # TIF -> TIFF
-        output_extension = ".tiff" if extension == ".tif" else output_extension
-
         temp_output_path = os.path.join(r"C:\Temp", f"temp_{base_name}{output_extension}")
         final_output_path = os.path.join(folder, f"{base_name}{output_extension}")
 
@@ -56,7 +53,7 @@ def convert(file_path: str) -> tuple[bool, str]:
             f'/convert={temp_output_path}',
             '/silent'
         ]
-
+        
         # Subprocess ausführen
         result = subprocess.run(
             cmd,

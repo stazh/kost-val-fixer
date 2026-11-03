@@ -4,7 +4,7 @@ import time
 import ctypes
 from pathlib import Path
 
-from pywinauto import Application, Desktop, keyboard
+from pywinauto import Application, Desktop, WindowSpecification, keyboard
 
 from services.xml.logging import info, warning, error, success
 import config
@@ -13,7 +13,7 @@ import config
 user32 = ctypes.windll.user32
 
 
-def drucken(dialog):
+def drucken(dialog: WindowSpecification):
     """
     Versucht den Drucken-Button im Acrobat-Druckdialog
     zuverlässig auszulösen.
@@ -25,13 +25,8 @@ def drucken(dialog):
             f"Titel={dialog.window_text()!r}, "
             f"Handle={dialog.handle}"
         )
-
-        dialog.wait(
-            "visible",
-            timeout=10
-        )
-
-        dialog.set_focus()
+        dialog.hide()
+        dialog.visible.wait('exists', timeout=10)
 
         time.sleep(0.5)
 
@@ -66,15 +61,7 @@ def drucken(dialog):
             control_type="Button"
         )
 
-        button.wait(
-            "visible",
-            timeout=10
-        )
-
-        button.wait(
-            "enabled",
-            timeout=10
-        )
+        button.visible.wait('enabled', timeout=10)
 
         info(
             f"Drucken-Button gefunden: "
@@ -82,19 +69,9 @@ def drucken(dialog):
         )
 
         try:
-            button.set_focus()
-            time.sleep(0.5)
-
-        except Exception as e:
-            warning(
-                f"Drucken-Button konnte nicht fokussiert werden: {e}"
-            )
-
-        try:
             info(
                 "Versuche Drucken über invoke()..."
             )
-
             button.invoke()
 
             info(
@@ -201,7 +178,6 @@ def get_window_class(hwnd):
 
 
 def speicherfenster_finden(acrobat_hwnd):
-
     info(
         "Warte auf Speicherdialog..."
     )
@@ -311,13 +287,11 @@ def speicherfenster_finden(acrobat_hwnd):
 def speichern(dialog, datei):
 
     try:
-
+        dialog.hide()
         info(
             "Steuere Speicherdialog direkt, "
             "ohne TAB-Navigation."
         )
-
-        dialog.set_focus()
 
         edits = dialog.descendants(
             control_type="Edit"
@@ -365,15 +339,7 @@ def speichern(dialog, datei):
             control_type="Button"
         )
 
-        button.wait(
-            "visible",
-            timeout=5
-        )
-
-        button.wait(
-            "enabled",
-            timeout=5
-        )
+        button.visible.wait('enabled', timeout=10)
 
         button.click_input()
 
@@ -528,9 +494,13 @@ def createPDF(file_path: str) -> tuple[bool, str]:
                 timeout=30
             )
 
+            app.windows.hide()
+
             acrobat = app.top_window()
 
             acrobat_hwnd = acrobat.handle
+
+            acrobat_hwnd.hide()
 
             info(
                 f"Acrobat gefunden: "
@@ -546,19 +516,6 @@ def createPDF(file_path: str) -> tuple[bool, str]:
             )
 
             return False, file_path
-
-        try:
-
-            acrobat.set_focus()
-
-            time.sleep(1)
-
-        except Exception as e:
-
-            warning(
-                f"Acrobat konnte nicht "
-                f"fokussiert werden: {e}"
-            )
 
         info(
             "Öffne Druckdialog..."
@@ -593,12 +550,9 @@ def createPDF(file_path: str) -> tuple[bool, str]:
                 control_type="Window"
             )
 
-            druck.wait(
-                "visible",
-                timeout=6
-            )
+            druck.hide()
 
-            druck.set_focus()
+            druck.visible.wait("exists", timeout=6)
 
             info(
                 f"Druckdialog gefunden: "

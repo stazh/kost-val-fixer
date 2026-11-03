@@ -28,7 +28,7 @@ SUPPORTED_ERRORS = {
         "A) Erkennung und Akzeptanz": "print",
         "D) Schriften": "print",
         "H) Metadaten": "convert",
-        "K) Schrift-Validierung": "convert"
+        "K) Schrift-Validierung": "print",
     },
     "TIFF": {"C) Komprimierung": "convert", "B) Jhove": "convert"},
     "TIF": {"C) Komprimierung": "convert", "B) Jhove": "convert"},
@@ -77,7 +77,9 @@ UMLAUT_MAP = {
     'Ä': 'Ae',
     'Ö': 'Oe',
     'Ü': 'Ue',
-    'ß': 'ss'
+    'ß': 'ss',
+    '  ': ' ',
+    '–': '-'
 }
 
 # ------------------------
@@ -85,7 +87,6 @@ UMLAUT_MAP = {
 # ------------------------
 CONVERT = "convert"
 PRINT = "print"
-PRINTER_PDF = "Microsoft Print to PDF"
 VALIDATE_FORMAT = "..\\Liberica_JRE\\bin\\java.exe -Xms2g -Xmx6g -XX:+UseG1GC -XX:MaxGCPauseMillis=200 -jar cmd_KOST-Val.jar --Switch \"Pfad\" --de --xml"
 
 # ------------------------
