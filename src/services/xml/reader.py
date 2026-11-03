@@ -3,6 +3,7 @@ import os
 from tkinter import filedialog, messagebox
 import xml.etree.ElementTree as ET
 
+import app
 import config
 
 from services.kost_val.validator import create_json_file, validate_files
@@ -121,77 +122,139 @@ def extract_invalid_validations(root_element) -> list:
 
 
 def process_validations(invalid_validations: list) -> list:
-    results= []
+    results = []
+
     app.screen_updating = False
     json_data_path = create_json_file()
+
     for validation in invalid_validations:
+
         file_path = str(validation["filePath"])
         modules = validation.get("modul", [])
-        error_message = str(validation["message"])
 
         info(f"Verarbeite Datei: {file_path} | Module: {modules}")
+
 
         file_type, fixer = get_file_handler(file_path)
 
         if not file_type:
             results.append((
-                file_path, "Nicht unterstützt", "Übersprungen (wird zurzeit nicht unterstützt)"
+                file_path,
+                "Nicht unterstützt",
+                "Übersprungen (wird zurzeit nicht unterstützt)"
             ))
-            
-            unsupported_file(file_path)
 
+            unsupported_file(file_path)
             error(f"Die Datei '{file_path}' wird nicht unterstützt.")
             continue
 
-        supported_errors = config.SUPPORTED_ERRORS.get(file_type, {}).fromkeys(modules, file_type)
+        if not os.path.exists(file_path):
+            error(f"Datei nicht gefunden: {file_path}")
+
+            results.append((
+                file_path,
+                "Fehler",
+                "Datei nicht gefunden"
+            ))
+            continue
+
+
+        supported_errors = config.SUPPORTED_ERRORS.get(file_type, {})
 
         actions = [
-            (modul, supported_errors[modul])
-            for modul in modules
-            if supported_errors.get(modul)
+            (module, supported_errors.get(module))
+            for module in modules
         ]
-        
-        for action in actions:
-            if not os.path.exists(file_path):
-                error(f"")
-            if not action:
-                save_logs()
-                if unknown_action := next((module for module in modules if module not in supported_errors), None):
-                    warning(f"{file_type}: Keine Aktion definiert für Modul '{unknown_action}'. Datei wird übersprungen.")
-                warning(f"{file_type}: Keine Aktion definiert für Modul '{action[0]}'. Datei wird übersprungen.")
+
+
+        valid_actions = []
+
+        for module, action_type in actions:
+
+            if not action_type:
+                warning(
+                    f"{file_type}: Keine Aktion definiert "
+                    f"für Modul '{module}'."
+                )
                 continue
 
+            valid_actions.append((module, action_type))
+
+        if not valid_actions:
+            warning(
+                f"{file_type}: Keine gültigen Aktionen für "
+                f"{file_path} gefunden. Datei wird übersprungen."
+            )
+            continue
+
+
+        print_available = any(
+            action_type == config.PRINT
+            for _, action_type in valid_actions
+        )
+
+        for module, action_type in valid_actions:
+
+            selected_action = (
+                config.PRINT
+                if print_available
+                else action_type
+            )
+
             try:
-                if action[1] not in ACTION_MAPPING:
-                    warning(f"{file_type}: Keine Aktion definiert für Modul '{action[0]}'. Datei wird übersprungen.")
-                    continue
-                success, path = ACTION_MAPPING[config.PRINT if config.PRINT in actions else action[1]](
+                success, path = ACTION_MAPPING[selected_action](
                     fixer,
                     file_path
                 )
-                
+
                 conversion_result(file_path, success)
 
                 if success:
                     results.append((
-                        path, "Konvertiert", None,
-                        action[1]
+                        path,
+                        "Konvertiert",
+                        None,
+                        selected_action
                     ))
+
                     break
 
             except Exception as action_error:
+
                 results.append((
-                    path, "Fehler", action_error
+                    file_path,
+                    "Fehler",
+                    str(action_error)
                 ))
-                error(f"Fehler bei Aktion '{action}' für {file_path}: {action_error}")
 
-    with open(json_data_path, "r", encoding="utf-8") as datei:
-        content = json.load(datei)
-        
-    content["converted_files"] = results
+                error(
+                    f"Fehler bei Aktion '{module}' "
+                    f"für {file_path}: {action_error}"
+                )
 
-    with open(json_data_path, "w", encoding="utf-8") as datei:
-        json.dump(content, datei, indent=4)
+                continue
+
+        else:
+            info(
+                f"Keine erfolgreiche Konvertierung für: {file_path}"
+            )
+
+    try:
+        with open(json_data_path, "r", encoding="utf-8") as datei:
+            content = json.load(datei)
+
+        content["converted_files"] = results
+
+        with open(json_data_path, "w", encoding="utf-8") as datei:
+            json.dump(
+                content,
+                datei,
+                indent=4,
+                ensure_ascii=False
+            )
+
+    except Exception as json_error:
+        error(f"Fehler beim Speichern der JSON-Datei: {json_error}")
 
     return results
 
